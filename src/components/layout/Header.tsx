@@ -1,4 +1,5 @@
 import { Trophy } from 'lucide-react'
+import { AuthButton } from '@/components/auth/AuthButton'
 
 export function Header() {
   return (
@@ -8,6 +9,7 @@ export function Header() {
           <Trophy className="h-6 w-6 text-primary" aria-hidden />
           <span className="font-semibold text-lg">Betting Tracker</span>
         </div>
+        <AuthButton />
       </div>
     </header>
   )
