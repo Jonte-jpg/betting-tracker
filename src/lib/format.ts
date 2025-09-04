@@ -1,10 +1,11 @@
 import { format as dfFormat } from 'date-fns'
 import { sv } from 'date-fns/locale'
+import type { Currency } from '@/store/useAppStore'
 
-export function formatCurrency(amount: number): string {
+export function formatCurrency(amount: number, currency: Currency = 'SEK'): string {
   return new Intl.NumberFormat('sv-SE', {
     style: 'currency',
-    currency: 'SEK',
+    currency,
     maximumFractionDigits: 2
   }).format(amount)
 }
