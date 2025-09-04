@@ -16,6 +16,11 @@ build/
 .env.test.local
 .env.production.local
 
+# Firebase
+.firebase/
+firebase-debug.log
+ui-debug.log
+
 # IDE
 .vscode/
 .idea/

@@ -11,7 +11,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  base: '/betting-tracker/', // GitHub Pages base path
+  base: '/', // Firebase Hosting (root path)
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
