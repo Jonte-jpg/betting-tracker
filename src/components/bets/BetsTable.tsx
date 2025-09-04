@@ -12,7 +12,7 @@ import { useAppStore } from '@/store/useAppStore'
 import { formatCurrency } from '@/lib/format'
 import { profitForBet } from '@/lib/calc'
 import { exportToCSV } from '@/lib/csv'
-import type { Bet } from '@/types/Bet'
+import type { Bet, BetResult } from '@/types/Bet'
 
 interface BetsTableProps {
   bets: Bet[]
@@ -111,7 +111,10 @@ export function BetsTable({ bets }: BetsTableProps) {
           
           <Select
             value={filters.userId || 'all'}
-            onValueChange={(value) => setFilters({ userId: value === 'all' ? undefined : value })}
+            onValueChange={(value) => {
+              const userId = value === 'all' ? undefined : value
+              setFilters({ userId })
+            }}
           >
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Alla användare" />
@@ -128,7 +131,10 @@ export function BetsTable({ bets }: BetsTableProps) {
           
           <Select
             value={filters.result || 'all'}
-            onValueChange={(value) => setFilters({ result: value === 'all' ? undefined : value as any })}
+            onValueChange={(value) => {
+              const result = value === 'all' ? undefined : value as BetResult
+              setFilters({ result })
+            }}
           >
             <SelectTrigger className="w-32">
               <SelectValue placeholder="Alla resultat" />

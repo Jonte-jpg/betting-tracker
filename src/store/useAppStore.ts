@@ -9,11 +9,11 @@ import { leaderboard as buildLeaderboard } from '../lib/calc'
 export type Currency = 'SEK' | 'USD' | 'EUR' | 'NOK' | 'DKK' | 'GBP'
 
 interface Filters {
-  userId?: string
-  result?: BetResult
-  from?: string
-  to?: string
-  search?: string
+  userId?: string | undefined
+  result?: BetResult | undefined
+  from?: string | undefined
+  to?: string | undefined
+  search?: string | undefined
 }
 
 interface Settings {

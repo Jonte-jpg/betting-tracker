@@ -8,7 +8,7 @@ import { useAppStore } from '@/store/useAppStore'
 import { toast } from 'sonner'
 
 export function SettingsPanel() {
-  const { users, addUser, updateUser, deleteUser, clearAllData } = useAppStore()
+  const { users, addUser, deleteUser, clearAllData } = useAppStore()
   const [newUserName, setNewUserName] = useState('')
   const [showClearDialog, setShowClearDialog] = useState(false)
   const [clearConfirmText, setClearConfirmText] = useState('')
