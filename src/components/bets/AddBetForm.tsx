@@ -134,7 +134,7 @@ export function AddBetForm() {
               <label htmlFor="result" className="block text-sm font-medium mb-1">
                 Resultat
               </label>
-              <Select onValueChange={(value) => setValue('result', value as any)}>
+              <Select onValueChange={(value) => setValue('result', value as 'pending' | 'won' | 'lost' | 'void')}>
                 <SelectTrigger>
                   <SelectValue placeholder="Välj resultat" />
                 </SelectTrigger>

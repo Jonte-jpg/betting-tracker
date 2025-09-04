@@ -4,10 +4,15 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { useAuth } from '@/hooks/useAuth'
 import { subscribeToBets, calculateBetStats, updateBet, deleteBet } from '@/lib/firestore'
+import { EditBetDialog } from '@/components/bets/EditBetDialog'
+import { BackupReminder } from '@/components/data/BackupReminder'
+import { exportFirebaseBetsAsJSON, exportFirebaseBetsAsCSV } from '@/lib/firebaseExport'
 import type { FirebaseBet } from '@/types/Firebase'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
-import { Trash2, TrendingUp, TrendingDown, Target, DollarSign } from 'lucide-react'
+import { Trash2, TrendingUp, TrendingDown, Target, DollarSign, Download } from 'lucide-react'
+import { toast } from 'sonner'
+import { deleteField } from 'firebase/firestore'
 
 export function FirebaseBetList() {
   const { user } = useAuth()
@@ -39,9 +44,36 @@ export function FirebaseBetList() {
 
   const handleUpdateBetResult = async (betId: string, result: FirebaseBet['result']) => {
     try {
-      await updateBet(betId, { result })
+      const bet = bets.find(b => b.id === betId)
+      if (!bet) return
+
+      const updateData: Partial<FirebaseBet> = { result }
+
+      // Calculate payout based on result
+      if (result === 'won') {
+        updateData.payout = bet.stake * bet.odds
+      } else if (result === 'lost') {
+        updateData.payout = 0
+      } else if (result === 'void') {
+        updateData.payout = bet.stake // Return stake for void bets
+      } else if (result === 'pending') {
+        // Remove payout field for pending bets using deleteField
+        (updateData as any).payout = deleteField()
+      }
+
+      await updateBet(betId, updateData)
+      
+      // Show success message
+      const messages = {
+        won: 'Bet markerat som vunnet! 🎉',
+        lost: 'Bet markerat som förlorat 😞',
+        void: 'Bet markerat som avbrutet',
+        pending: 'Bet markerat som pågående'
+      }
+      toast.success(messages[result])
     } catch (error) {
       console.error('Error updating bet:', error)
+      toast.error('Kunde inte uppdatera bet')
     }
   }
 
@@ -52,6 +84,26 @@ export function FirebaseBetList() {
       } catch (error) {
         console.error('Error deleting bet:', error)
       }
+    }
+  }
+
+  const handleExportJSON = () => {
+    try {
+      exportFirebaseBetsAsJSON(bets, user?.email || 'unknown')
+      toast.success('Data exporterad som JSON')
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Kunde inte exportera data')
+    }
+  }
+
+  const handleExportCSV = () => {
+    try {
+      exportFirebaseBetsAsCSV(bets)
+      toast.success('Data exporterad som CSV')
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Kunde inte exportera data')
     }
   }
 
@@ -79,12 +131,41 @@ export function FirebaseBetList() {
 
   const stats = calculateBetStats(bets)
 
+  const getBetCardClasses = (result: FirebaseBet['result']) => {
+    const baseClasses = 'border-2 rounded-lg p-4 space-y-3 transition-colors text-black'
+    switch (result) {
+      case 'won': 
+        return `${baseClasses} !border-green-400 !bg-green-50 hover:!bg-green-100`
+      case 'lost': 
+        return `${baseClasses} !border-red-400 !bg-red-50 hover:!bg-red-100`
+      case 'void': 
+        return `${baseClasses} !border-yellow-400 !bg-yellow-50 hover:!bg-yellow-100`
+      case 'pending':
+      default: 
+        return `${baseClasses} !border-blue-400 !bg-blue-50 hover:!bg-blue-100`
+    }
+  }
+
   const getResultVariant = (result: FirebaseBet['result']) => {
     switch (result) {
       case 'won': return 'default'
-      case 'lost': return 'destructive'
+      case 'lost': return 'destructive' 
       case 'void': return 'secondary'
       default: return 'outline'
+    }
+  }
+
+  const getResultBadgeClasses = (result: FirebaseBet['result']) => {
+    switch (result) {
+      case 'won': 
+        return 'bg-green-100 text-green-800 border-green-300 font-medium'
+      case 'lost': 
+        return 'bg-red-100 text-red-800 border-red-300 font-medium'
+      case 'void': 
+        return 'bg-yellow-100 text-yellow-800 border-yellow-300 font-medium'
+      case 'pending':
+      default: 
+        return 'bg-blue-100 text-blue-800 border-blue-300 font-medium'
     }
   }
 
@@ -97,8 +178,20 @@ export function FirebaseBetList() {
     }
   }
 
+  const getPayoutLabel = (result: FirebaseBet['result']) => {
+    switch (result) {
+      case 'won': return 'Total utbetalning:'
+      case 'void': return 'Återbetalning:'
+      case 'lost': return 'Förlust:'
+      default: return 'Faktisk utbetalning:'
+    }
+  }
+
   return (
     <div className="space-y-6">
+      {/* Backup Reminder */}
+      <BackupReminder />
+      
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
@@ -159,6 +252,30 @@ export function FirebaseBetList() {
         </Card>
       </div>
 
+      {/* Export Section */}
+      {bets.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Exportera Data</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap gap-3">
+              <Button onClick={handleExportJSON} variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Exportera JSON
+              </Button>
+              <Button onClick={handleExportCSV} variant="outline" className="flex items-center gap-2">
+                <Download className="h-4 w-4" />
+                Exportera CSV
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              Exportera din data för backup eller analys i andra verktyg
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Bets List */}
       <Card>
         <CardHeader>
@@ -171,22 +288,25 @@ export function FirebaseBetList() {
             </p>
           ) : (
             <div className="space-y-4">
-              {bets.map((bet) => (
+              {bets.map((bet) => {
+                const cardClasses = getBetCardClasses(bet.result)
+                console.log(`Bet ${bet.id} has result: ${bet.result}, classes: ${cardClasses}`)
+                return (
                 <div
                   key={bet.id}
-                  className="border rounded-lg p-4 space-y-3"
+                  className={cardClasses}
                 >
                   <div className="flex justify-between items-start">
                     <div className="space-y-1">
-                      <h3 className="font-medium">{bet.event}</h3>
-                      <p className="text-sm text-muted-foreground">{bet.market}</p>
+                      <h3 className="font-medium text-black">{bet.event}</h3>
+                      <p className="text-sm text-gray-700">{bet.market}</p>
                       <div className="flex items-center gap-2 text-sm">
-                        <span>{bet.bookmaker}</span>
-                        <Badge variant="outline">{bet.currency}</Badge>
+                        <span className="text-gray-800">{bet.bookmaker}</span>
+                        <Badge variant="outline" className="text-black border-gray-400">{bet.currency}</Badge>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={getResultVariant(bet.result)}>
+                      <Badge variant={getResultVariant(bet.result)} className={getResultBadgeClasses(bet.result)}>
                         {(() => {
                           if (bet.result === 'pending') return 'Pågående'
                           if (bet.result === 'won') return 'Vunnen'
@@ -194,37 +314,42 @@ export function FirebaseBetList() {
                           return 'Avbruten'
                         })()}
                       </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteBet(bet.id!)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <EditBetDialog bet={bet} />
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteBet(bet.id!)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                     <div>
-                      <span className="text-muted-foreground">Insats:</span>
-                      <div className="font-medium">
+                      <span className="text-gray-600">Insats:</span>
+                      <div className="font-medium text-black">
                         {formatCurrency(bet.stake, bet.currency)}
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Odds:</span>
-                      <div className="font-medium">{bet.odds.toFixed(2)}</div>
+                      <span className="text-gray-600">Odds:</span>
+                      <div className="font-medium text-black">{bet.odds.toFixed(2)}</div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Potentiell vinst:</span>
+                      <span className="text-gray-600">Potentiell vinst:</span>
                       <div className="font-medium text-green-600">
                         {formatCurrency(bet.stake * (bet.odds - 1), bet.currency)}
                       </div>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">Faktisk utbetalning:</span>
+                      <span className="text-gray-600">
+                        {getPayoutLabel(bet.result)}
+                      </span>
                       <div className={`font-medium ${getResultColor(bet.result)}`}>
-                        {bet.payout ? formatCurrency(bet.payout, bet.currency) : '-'}
+                        {bet.payout !== undefined ? formatCurrency(bet.payout, bet.currency) : '-'}
                       </div>
                     </div>
                   </div>
@@ -240,7 +365,7 @@ export function FirebaseBetList() {
                   )}
 
                   {bet.notes && (
-                    <p className="text-sm text-muted-foreground bg-muted/50 p-2 rounded">
+                    <p className="text-sm text-gray-700 bg-gray-100 p-2 rounded">
                       {bet.notes}
                     </p>
                   )}
@@ -273,11 +398,12 @@ export function FirebaseBetList() {
                     </div>
                   )}
 
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-gray-600">
                     {format(new Date(bet.createdAt), 'PPp', { locale: sv })}
                   </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>

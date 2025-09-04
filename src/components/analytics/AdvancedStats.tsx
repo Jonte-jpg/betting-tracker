@@ -5,13 +5,11 @@ import { useAppStore } from '@/store/useAppStore'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
 import { 
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, AreaChart, Area
 } from 'recharts'
 import { Badge } from '@/components/ui/badge'
-import { TrendingUp, TrendingDown, Target, DollarSign, Calendar, Percent } from 'lucide-react'
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884D8']
+import { TrendingUp, TrendingDown, Target, DollarSign, Percent } from 'lucide-react'
 
 export function AdvancedStats() {
   const { bets, users, settings } = useAppStore()
@@ -46,9 +44,9 @@ export function AdvancedStats() {
         acc[month].lost += 1
       }
       return acc
-    }, {} as Record<string, any>)
+    }, {} as Record<string, { month: string; profit: number; staked: number; won: number; lost: number; count: number }>)
     
-    const monthlyChartData = Object.values(monthlyData).sort((a: any, b: any) => 
+    const monthlyChartData = Object.values(monthlyData).sort((a, b) => 
       a.month.localeCompare(b.month)
     )
     
@@ -64,12 +62,12 @@ export function AdvancedStats() {
         acc[date].profit -= bet.stake
       }
       return acc
-    }, {} as Record<string, any>)
+    }, {} as Record<string, { date: string; profit: number; cumulative: number }>)
     
     let cumulativeProfit = 0
     const dailyChartData = Object.values(dailyData)
-      .sort((a: any, b: any) => a.date.localeCompare(b.date))
-      .map((day: any) => {
+      .sort((a, b) => a.date.localeCompare(b.date))
+      .map((day) => {
         cumulativeProfit += day.profit
         return { ...day, cumulative: cumulativeProfit }
       })
@@ -289,8 +287,8 @@ export function AdvancedStats() {
                         { name: 'Vunna', value: stats.wonBets, color: '#22c55e' },
                         { name: 'Förlorade', value: stats.lostBets, color: '#ef4444' },
                         { name: 'Avbrutna', value: stats.voidBets, color: '#6b7280' }
-                      ].map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ].map((entry) => (
+                        <Cell key={entry.name} fill={entry.color} />
                       ))}
                     </Pie>
                     <Tooltip />
@@ -303,7 +301,7 @@ export function AdvancedStats() {
         
         <TabsContent value="users" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {stats.userStats.map((user, index) => (
+            {stats.userStats.map((user) => (
               <Card key={user.name}>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">

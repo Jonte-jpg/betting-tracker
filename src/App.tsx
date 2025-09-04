@@ -1,15 +1,17 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useState, Suspense, lazy } from 'react'
 import { Container } from './components/layout/Container'
 import { Header } from './components/layout/Header'
 import { EnhancedSummaryCards } from './components/summary/EnhancedSummaryCards'
 import { AddBetForm } from './components/bets/AddBetForm'
 import { BetsTable } from './components/bets/BetsTable'
-import { Leaderboard } from './components/leaderboard/Leaderboard'
-import { SettingsPanel } from './components/settings/SettingsPanel'
-import { AdvancedStats } from './components/analytics/AdvancedStats'
-import { ImportExport } from './components/data/ImportExport'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
 import { useAppStore } from './store/useAppStore'
+
+// Lazy load components that are not immediately visible
+const AdvancedStats = lazy(() => import('./components/analytics/AdvancedStats').then(m => ({ default: m.AdvancedStats })))
+const Leaderboard = lazy(() => import('./components/leaderboard/Leaderboard').then(m => ({ default: m.Leaderboard })))
+const ImportExport = lazy(() => import('./components/data/ImportExport').then(m => ({ default: m.ImportExport })))
+const SettingsPanel = lazy(() => import('./components/settings/SettingsPanel').then(m => ({ default: m.SettingsPanel })))
 
 export default function App() {
   const { bets, filters } = useAppStore()
@@ -47,16 +49,24 @@ export default function App() {
             </div>
           </TabsContent>
           <TabsContent value="analytics" className="space-y-6">
-            <AdvancedStats />
+            <Suspense fallback={<div className="text-center p-8">Laddar analys...</div>}>
+              <AdvancedStats />
+            </Suspense>
           </TabsContent>
           <TabsContent value="leaderboard">
-            <Leaderboard />
+            <Suspense fallback={<div className="text-center p-8">Laddar leaderboard...</div>}>
+              <Leaderboard />
+            </Suspense>
           </TabsContent>
           <TabsContent value="data" className="space-y-6">
-            <ImportExport />
+            <Suspense fallback={<div className="text-center p-8">Laddar data...</div>}>
+              <ImportExport />
+            </Suspense>
           </TabsContent>
           <TabsContent value="settings">
-            <SettingsPanel />
+            <Suspense fallback={<div className="text-center p-8">Laddar inställningar...</div>}>
+              <SettingsPanel />
+            </Suspense>
           </TabsContent>
         </Tabs>
       </Container>

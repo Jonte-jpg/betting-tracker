@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
 import { sv } from 'date-fns/locale'
-import { Edit2, Trash2, Download, Upload } from 'lucide-react'
+import { Trash2, Download } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 import { Button } from '@/components/ui/button'
@@ -9,17 +9,18 @@ import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Badge } from '@/components/ui/badge'
 import { useAppStore } from '@/store/useAppStore'
+import { EditLocalBetDialog } from '@/components/bets/EditLocalBetDialog'
 import { formatCurrency } from '@/lib/format'
 import { profitForBet } from '@/lib/calc'
 import { exportToCSV } from '@/lib/csv'
 import type { Bet, BetResult } from '@/types/Bet'
 
 interface BetsTableProps {
-  bets: Bet[]
+  readonly bets: Bet[]
 }
 
 export function BetsTable({ bets }: BetsTableProps) {
-  const { users, setFilters, filters, deleteBet } = useAppStore()
+  const { users, setFilters, filters, deleteBet, updateBet } = useAppStore()
   const [sortField, setSortField] = useState<keyof Bet>('date')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc')
 
@@ -46,23 +47,27 @@ export function BetsTable({ bets }: BetsTableProps) {
     }
   }
 
+  const handleUpdateBetResult = (betId: string, result: Bet['result']) => {
+    updateBet(betId, { result })
+  }
+
   const handleExport = () => {
     exportToCSV(bets, users)
   }
 
   const getResultBadge = (result: Bet['result']) => {
     const variants = {
-      pending: 'default',
+      pending: 'outline',
       won: 'default',
       lost: 'destructive',
       void: 'secondary',
     } as const
 
     const colors = {
-      pending: 'bg-yellow-100 text-yellow-800',
-      won: 'bg-green-100 text-green-800',
-      lost: 'bg-red-100 text-red-800',
-      void: 'bg-gray-100 text-gray-800',
+      pending: 'bg-blue-100 text-blue-800 border-blue-200',
+      won: 'bg-green-100 text-green-800 border-green-200',
+      lost: 'bg-red-100 text-red-800 border-red-200',
+      void: 'bg-yellow-100 text-yellow-800 border-yellow-200',
     }
 
     return (
@@ -70,6 +75,26 @@ export function BetsTable({ bets }: BetsTableProps) {
         {result.toUpperCase()}
       </Badge>
     )
+  }
+
+  const getProfitColorClass = (profit: number): string => {
+    if (profit > 0) return 'text-green-600'
+    if (profit < 0) return 'text-red-600'
+    return 'text-gray-600'
+  }
+
+  const getRowClasses = (result: Bet['result']) => {
+    switch (result) {
+      case 'won': 
+        return 'bg-green-50 hover:bg-green-100 border-l-4 border-l-green-400 text-black'
+      case 'lost': 
+        return 'bg-red-50 hover:bg-red-100 border-l-4 border-l-red-400 text-black'
+      case 'void': 
+        return 'bg-yellow-50 hover:bg-yellow-100 border-l-4 border-l-yellow-400 text-black'
+      case 'pending':
+      default: 
+        return 'bg-blue-50 hover:bg-blue-100 border-l-4 border-l-blue-400 text-black'
+    }
   }
 
   if (bets.length === 0) {
@@ -191,7 +216,7 @@ export function BetsTable({ bets }: BetsTableProps) {
                 const profit = profitForBet(bet)
                 
                 return (
-                  <TableRow key={bet.id}>
+                  <TableRow key={bet.id} className={getRowClasses(bet.result)}>
                     <TableCell>
                       {format(new Date(bet.date), 'yyyy-MM-dd HH:mm', { locale: sv })}
                     </TableCell>
@@ -212,18 +237,44 @@ export function BetsTable({ bets }: BetsTableProps) {
                       {bet.odds.toFixed(2)}
                     </TableCell>
                     <TableCell>
-                      {getResultBadge(bet.result)}
+                      <div className="space-y-2">
+                        {getResultBadge(bet.result)}
+                        {bet.result === 'pending' && (
+                          <div className="flex flex-wrap gap-1">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateBetResult(bet.id, 'won')}
+                              className="text-green-600 border-green-600 hover:bg-green-50 text-xs"
+                            >
+                              Vunnen
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateBetResult(bet.id, 'lost')}
+                              className="text-red-600 border-red-600 hover:bg-red-50 text-xs"
+                            >
+                              Förlorad
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUpdateBetResult(bet.id, 'void')}
+                              className="text-xs"
+                            >
+                              Avbruten
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </TableCell>
-                    <TableCell className={`text-right font-medium ${
-                      profit > 0 ? 'text-green-600' : profit < 0 ? 'text-red-600' : 'text-gray-600'
-                    }`}>
+                    <TableCell className={`text-right font-medium ${getProfitColorClass(profit)}`}>
                       {formatCurrency(profit)}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm">
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
+                        <EditLocalBetDialog bet={bet} />
                         <Button 
                           variant="ghost" 
                           size="sm"

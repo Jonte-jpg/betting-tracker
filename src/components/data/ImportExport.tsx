@@ -32,6 +32,10 @@ export function ImportExport() {
       a.click()
       document.body.removeChild(a)
       URL.revokeObjectURL(url)
+      
+      // Save backup date to localStorage
+      localStorage.setItem('lastBackupDate', new Date().toISOString())
+      
       toast.success('Data exporterad som JSON')
     } catch (error) {
       console.error('Export error:', error)

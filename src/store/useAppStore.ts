@@ -9,11 +9,11 @@ import { leaderboard as buildLeaderboard } from '../lib/calc'
 export type Currency = 'SEK' | 'USD' | 'EUR' | 'NOK' | 'DKK' | 'GBP'
 
 interface Filters {
-  userId?: string | undefined
-  result?: BetResult | undefined
-  from?: string | undefined
-  to?: string | undefined
-  search?: string | undefined
+  userId?: string
+  result?: BetResult
+  from?: string
+  to?: string
+  search?: string
 }
 
 interface Settings {
@@ -181,7 +181,7 @@ export const useAppStore = create<StoreState>()(
         bets: s.bets,
         settings: s.settings
       }),
-      migrate: (persistedState: any, version) => {
+      migrate: (persistedState: unknown, version) => {
         if (!persistedState) return persistedState
         if (version < STORAGE_VERSION) {
           // Future migrations here

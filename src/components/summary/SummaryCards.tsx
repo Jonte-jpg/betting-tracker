@@ -12,7 +12,7 @@ interface Summary {
 }
 
 interface SummaryCardsProps {
-  summary: Summary
+  readonly summary: Summary
 }
 
 export function SummaryCards({ summary }: SummaryCardsProps) {

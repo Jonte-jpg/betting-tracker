@@ -22,7 +22,7 @@ export function useAuth() {
           uid: user.uid,
           email: user.email || '',
           displayName: user.displayName || '',
-          photoURL: user.photoURL || undefined,
+          photoURL: user.photoURL || '',
           createdAt: userSnap.exists() ? userSnap.data().createdAt : new Date().toISOString(),
           lastLoginAt: new Date().toISOString(),
           preferences: userSnap.exists() 

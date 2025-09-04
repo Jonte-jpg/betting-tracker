@@ -119,8 +119,9 @@ export function FirebaseBetForm() {
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium">Event</label>
+              <label htmlFor="event" className="text-sm font-medium">Event</label>
               <Input
+                id="event"
                 {...register('event')}
                 placeholder="t.ex. Real Madrid vs Barcelona"
               />
@@ -130,8 +131,9 @@ export function FirebaseBetForm() {
             </div>
             
             <div>
-              <label className="text-sm font-medium">Marknad</label>
+              <label htmlFor="market" className="text-sm font-medium">Marknad</label>
               <Input
+                id="market"
                 {...register('market')}
                 placeholder="t.ex. 1X2, Over/Under 2.5"
               />
@@ -143,8 +145,9 @@ export function FirebaseBetForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm font-medium">Insats</label>
+              <label htmlFor="stake" className="text-sm font-medium">Insats</label>
               <Input
+                id="stake"
                 {...register('stake', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
@@ -156,8 +159,9 @@ export function FirebaseBetForm() {
             </div>
             
             <div>
-              <label className="text-sm font-medium">Odds</label>
+              <label htmlFor="odds" className="text-sm font-medium">Odds</label>
               <Input
+                id="odds"
                 {...register('odds', { valueAsNumber: true })}
                 type="number"
                 step="0.01"
@@ -169,12 +173,12 @@ export function FirebaseBetForm() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Valuta</label>
+              <label htmlFor="currency" className="text-sm font-medium">Valuta</label>
               <Select
                 value={watch('currency')}
                 onValueChange={(value) => setValue('currency', value as typeof CURRENCIES[number])}
               >
-                <SelectTrigger>
+                <SelectTrigger id="currency">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -190,12 +194,12 @@ export function FirebaseBetForm() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium">Bookmaker</label>
+              <label htmlFor="bookmaker" className="text-sm font-medium">Bookmaker</label>
               <Select
                 value={watch('bookmaker')}
                 onValueChange={(value) => setValue('bookmaker', value)}
               >
-                <SelectTrigger>
+                <SelectTrigger id="bookmaker">
                   <SelectValue placeholder="Välj bookmaker" />
                 </SelectTrigger>
                 <SelectContent>
@@ -212,12 +216,12 @@ export function FirebaseBetForm() {
             </div>
 
             <div>
-              <label className="text-sm font-medium">Resultat</label>
+              <label htmlFor="result" className="text-sm font-medium">Resultat</label>
               <Select
                 value={watch('result')}
                 onValueChange={(value) => setValue('result', value as BetFormData['result'])}
               >
-                <SelectTrigger>
+                <SelectTrigger id="result">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -231,17 +235,19 @@ export function FirebaseBetForm() {
           </div>
 
           <div>
-            <label className="text-sm font-medium">Anteckningar</label>
+            <label htmlFor="notes" className="text-sm font-medium">Anteckningar</label>
             <Input
+              id="notes"
               {...register('notes')}
               placeholder="Fritext om betet..."
             />
           </div>
 
           <div>
-            <label className="text-sm font-medium">Tags</label>
+            <label htmlFor="tags" className="text-sm font-medium">Tags</label>
             <div className="flex gap-2 mb-2">
               <Input
+                id="tags"
                 value={tagInput}
                 onChange={(e) => setTagInput(e.target.value)}
                 placeholder="Lägg till tag..."

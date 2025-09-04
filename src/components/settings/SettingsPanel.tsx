@@ -98,6 +98,7 @@ export function SettingsPanel() {
         // Import logic would go here
         toast.success('Data importerad')
       } catch (error) {
+        console.error('Import error:', error)
         toast.error('Kunde inte importera filen')
       }
     }
@@ -164,7 +165,7 @@ export function SettingsPanel() {
               Exportera data
             </Button>
             
-            <label className="cursor-pointer">
+            <label htmlFor="import-file" className="cursor-pointer" aria-label="Importera data fil">
               <Button variant="outline" asChild>
                 <span>
                   <Upload className="h-4 w-4 mr-2" />
@@ -172,6 +173,7 @@ export function SettingsPanel() {
                 </span>
               </Button>
               <input
+                id="import-file"
                 type="file"
                 accept=".json"
                 onChange={handleImportData}

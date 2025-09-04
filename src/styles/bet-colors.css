@@ -1,0 +1,40 @@
+/* 
+ * Detta är en safelist för Tailwind CSS för att säkerställa att alla färgklasser 
+ * för bet-status inkluderas i den slutgiltiga CSS-filen.
+ * 
+ * Utan denna fil kan Tailwind's purge-process ta bort oanvända klasser.
+ */
+
+/* Bakgrundsfärger för bet-status */
+.bg-green-50 { }
+.bg-red-50 { }
+.bg-yellow-50 { }
+.bg-blue-50 { }
+
+.bg-green-100 { }
+.bg-red-100 { }
+.bg-yellow-100 { }
+.bg-blue-100 { }
+
+/* Border-färger */
+.border-green-200 { }
+.border-red-200 { }
+.border-yellow-200 { }
+.border-blue-200 { }
+
+.border-green-300 { }
+.border-red-300 { }
+.border-yellow-300 { }
+.border-blue-300 { }
+
+/* Text-färger */
+.text-green-800 { }
+.text-red-800 { }
+.text-yellow-800 { }
+.text-blue-800 { }
+
+/* Hover-states */
+.hover\:bg-green-100:hover { }
+.hover\:bg-red-100:hover { }
+.hover\:bg-yellow-100:hover { }
+.hover\:bg-blue-100:hover { }

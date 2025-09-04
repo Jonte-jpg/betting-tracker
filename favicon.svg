@@ -1,14 +1,22 @@
-// public/favicon.svg
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
   <defs>
     <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
       <stop offset="0" stop-color="#3b82f6"/>
-      <stop offset="1" stop-color="#22c55e"/>
+      <stop offset="1" stop-color="#1d4ed8"/>
     </linearGradient>
   </defs>
   <rect width="128" height="128" rx="24" fill="url(#g)"/>
   <g fill="#fff">
-    <path d="M28 84c0-20 16-36 36-36s36 16 36 36h-10c0-14.4-11.6-26-26-26S38 69.6 38 84z"/>
-    <path d="M44 88h12l8-20 10 28 6-12h14v8H76l-4 8-10-28-6 16H44z"/>
+    <!-- Trophy icon -->
+    <path d="M64 20c-4 0-8 2-8 6v8h16v-8c0-4-4-6-8-6z"/>
+    <path d="M40 34v12c0 13.2 10.8 24 24 24s24-10.8 24-24V34H40z"/>
+    <path d="M56 74h16v14h-16z"/>
+    <path d="M50 88h28v8H50z"/>
+    <!-- Chart elements -->
+    <circle cx="25" cy="55" r="3" opacity="0.8"/>
+    <circle cx="35" cy="48" r="3" opacity="0.8"/>
+    <circle cx="103" cy="52" r="3" opacity="0.8"/>
+    <circle cx="93" cy="45" r="3" opacity="0.8"/>
+    <path d="M25 55l10-7M93 45l10 7" stroke="#fff" stroke-width="2" opacity="0.6"/>
   </g>
 </svg>
