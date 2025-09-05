@@ -6,14 +6,17 @@ import { Upload, FileText, Zap, AlertCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useAuth } from '@/hooks/useAuth'
 import { addBet } from '@/lib/firestore'
+import { convertTabulaToStandardCSV } from '@/utils/tabulaConverter'
 import type { FirebaseBet } from '@/types/Firebase'
+
+type BetResult = 'pending' | 'won' | 'lost' | 'void'
 
 interface Bet365Bet {
   event: string
   market: string
   odds: number
   stake: number
-  result: 'pending' | 'won' | 'lost' | 'void'
+  result: BetResult
   bookmaker: string
   currency: string
   payout?: number
@@ -282,6 +285,54 @@ function parseBet365CSV(csvText: string): Bet365Bet[] {
     throw new Error('CSV-filen är tom eller har fel format')
   }
 
+  // Check if this looks like Tabula format (has betting confirmation IDs and Swedish text)
+  const isTabulaFormat = lines.some(line => 
+    line.includes('Spelbekräftelse') || 
+    line.includes('Vinnande') || 
+    line.includes('Förlorande') ||
+    /[A-Z]{2}\d{10}[A-Z]/.test(line) // Pattern like "PL3109675301I"
+  )
+
+  if (isTabulaFormat) {
+    console.log('Detected Tabula format, converting...')
+    try {
+      const standardCSV = convertTabulaToStandardCSV(csvText)
+      if (!standardCSV.trim()) {
+        throw new Error('Ingen giltig betting-data hittades i Tabula-filen')
+      }
+      
+      // Parse the converted CSV
+      const convertedLines = standardCSV.trim().split('\n')
+      return convertedLines.map((line, index) => {
+        try {
+          const columns = parseCSVLine(line)
+          if (columns.length < 6) {
+            throw new Error(`Konverterad rad har för få kolumner: ${line}`)
+          }
+          
+          return {
+            placedDate: columns[0] + 'T12:00:00.000Z', // Add time component
+            event: columns[1]?.trim() || `Unknown Event ${index + 1}`,
+            market: columns[2]?.trim() || 'Unknown Market',
+            odds: parseFloat(columns[3]) || 1.0,
+            stake: parseFloat(columns[4]) || 0,
+            result: columns[5] as 'pending' | 'won' | 'lost' | 'void' || 'pending',
+            payout: columns[6] ? parseFloat(columns[6]) : undefined,
+            bookmaker: 'Bet365',
+            currency: 'SEK'
+          }
+        } catch (error) {
+          console.warn(`Error parsing converted Tabula row ${index + 1}:`, error)
+          throw new Error(`Fel vid konvertering av rad ${index + 1}: ${error}`)
+        }
+      })
+    } catch (error) {
+      console.error('Tabula conversion failed:', error)
+      throw new Error(`Kunde inte konvertera Tabula-format: ${error}`)
+    }
+  }
+
+  // Original logic for standard CSV format
   // Skip header row
   const dataLines = lines.slice(1).filter(line => line.trim() !== '')
   
@@ -354,7 +405,7 @@ function parseDate(dateStr: string): string | null {
   ]
   
   for (const format of formats) {
-    const match = dateStr.match(format)
+    const match = format.exec(dateStr)
     if (match) {
       const date = new Date(match[1])
       if (!isNaN(date.getTime())) {
