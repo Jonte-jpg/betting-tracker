@@ -12,14 +12,22 @@ import {
 import { db } from '@/lib/firebase'
 import type { FirebaseBet } from '@/types/Firebase'
 
-export const addBet = async (betData: Omit<FirebaseBet, 'id' | 'createdAt' | 'updatedAt'>) => {
+export const addBet = async (betData: Omit<FirebaseBet, 'id'> | Omit<FirebaseBet, 'id' | 'createdAt' | 'updatedAt'>) => {
   const now = new Date().toISOString()
   
   const bet: Omit<FirebaseBet, 'id'> = {
     ...betData,
-    payout: betData.result === 'won' ? betData.stake * betData.odds : 0,
-    createdAt: now,
-    updatedAt: now
+    createdAt: 'createdAt' in betData ? betData.createdAt : now,
+    updatedAt: 'updatedAt' in betData ? betData.updatedAt : now
+  }
+
+  // Auto-calculate payout if not provided
+  if (!bet.payout && bet.result === 'won') {
+    bet.payout = bet.stake * bet.odds
+  } else if (!bet.payout && bet.result === 'lost') {
+    bet.payout = 0
+  } else if (!bet.payout && bet.result === 'void') {
+    bet.payout = bet.stake // Return stake for void bets
   }
 
   const docRef = await addDoc(collection(db, 'bets'), bet)

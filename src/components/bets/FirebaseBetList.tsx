@@ -6,6 +6,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { subscribeToBets, calculateBetStats, updateBet, deleteBet } from '@/lib/firestore'
 import { EditBetDialog } from '@/components/bets/EditBetDialog'
 import { BackupReminder } from '@/components/data/BackupReminder'
+import { Bet365Import } from '@/components/data/Bet365Import'
+import { CSVInstructions } from '@/components/data/CSVInstructions'
 import { exportFirebaseBetsAsJSON, exportFirebaseBetsAsCSV } from '@/lib/firebaseExport'
 import type { FirebaseBet } from '@/types/Firebase'
 import { format } from 'date-fns'
@@ -192,6 +194,12 @@ export function FirebaseBetList() {
     <div className="space-y-6">
       {/* Backup Reminder */}
       <BackupReminder />
+      
+      {/* Bet365 CSV Import */}
+      <Bet365Import />
+      
+      {/* CSV Instructions */}
+      <CSVInstructions />
       
       {/* Stats Summary */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
