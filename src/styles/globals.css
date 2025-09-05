@@ -67,8 +67,10 @@ body {
 input[type="number"]::-webkit-outer-spin-button,
 input[type="number"]::-webkit-inner-spin-button {
   @apply appearance-none m-0;
+  -webkit-appearance: none;
 }
 input[type="number"] {
+  appearance: textfield;
   -moz-appearance: textfield;
 }
 

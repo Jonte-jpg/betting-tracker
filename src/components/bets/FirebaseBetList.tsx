@@ -58,6 +58,7 @@ export function FirebaseBetList() {
         updateData.payout = bet.stake // Return stake for void bets
       } else if (result === 'pending') {
         // Remove payout field for pending bets using deleteField
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (updateData as any).payout = deleteField()
       }
 
