@@ -1,6 +1,8 @@
 import { Trophy } from 'lucide-react'
 import { AuthButton } from '@/components/auth/AuthButton'
 import { ThemeToggle } from '@/components/ui/theme-toggle'
+import { OfflineIndicator } from '@/components/ui/offline-indicator'
+import { PWAInstaller } from '@/components/ui/pwa-installer'
 
 export function Header() {
   return (
@@ -12,7 +14,9 @@ export function Header() {
             Betting Tracker
           </span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <OfflineIndicator />
+          <PWAInstaller />
           <ThemeToggle />
           <AuthButton />
         </div>
