@@ -12,10 +12,11 @@ const AdvancedStats = lazy(() => import('./components/analytics/AdvancedStats').
 const Leaderboard = lazy(() => import('./components/leaderboard/Leaderboard').then(m => ({ default: m.Leaderboard })))
 const ImportExport = lazy(() => import('./components/data/ImportExport').then(m => ({ default: m.ImportExport })))
 const SettingsPanel = lazy(() => import('./components/settings/SettingsPanel').then(m => ({ default: m.SettingsPanel })))
+const TransactionsManager = lazy(() => import('./components/transactions/TransactionsManager').then(m => ({ default: m.TransactionsManager })))
 
 export default function App() {
   const { bets, filters } = useAppStore()
-  const [tab, setTab] = useState<'bets' | 'analytics' | 'leaderboard' | 'data' | 'settings'>('bets')
+  const [tab, setTab] = useState<'bets' | 'analytics' | 'leaderboard' | 'data' | 'settings' | 'transactions'>('bets')
 
   const visibleBets = useMemo(() => {
     return bets.filter((b) => {
@@ -36,6 +37,7 @@ export default function App() {
         <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
           <TabsList className="mb-4">
             <TabsTrigger value="bets">Bets</TabsTrigger>
+            <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="analytics">Analys</TabsTrigger>
             <TabsTrigger value="leaderboard">Leaderboard</TabsTrigger>
             <TabsTrigger value="data">Data</TabsTrigger>
@@ -51,6 +53,11 @@ export default function App() {
           <TabsContent value="analytics" className="space-y-6">
             <Suspense fallback={<div className="text-center p-8">Laddar analys...</div>}>
               <AdvancedStats />
+            </Suspense>
+          </TabsContent>
+          <TabsContent value="transactions">
+            <Suspense fallback={<div className="text-center p-8">Laddar transactions...</div>}>
+              <TransactionsManager />
             </Suspense>
           </TabsContent>
           <TabsContent value="leaderboard">

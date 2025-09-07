@@ -10,7 +10,7 @@ import {
   deleteDoc
 } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
-import type { FirebaseBet } from '@/types/Firebase'
+import type { FirebaseBet, Transaction } from '@/types/Firebase'
 
 export const addBet = async (betData: Omit<FirebaseBet, 'id'> | Omit<FirebaseBet, 'id' | 'createdAt' | 'updatedAt'>) => {
   const now = new Date().toISOString()
@@ -111,4 +111,45 @@ export const calculateBetStats = (bets: FirebaseBet[]) => {
     avgStake: settledBets.length > 0 ? totalStaked / settledBets.length : 0,
     avgOdds: settledBets.length > 0 ? settledBets.reduce((sum, bet) => sum + bet.odds, 0) / settledBets.length : 0
   }
+}
+
+// Transaction Management Functions
+export const addTransaction = async (transaction: Omit<Transaction, 'id'>) => {
+  const docRef = await addDoc(collection(db, 'transactions'), transaction)
+  return docRef.id
+}
+
+export const updateTransaction = async (transactionId: string, updates: Partial<Omit<Transaction, 'id' | 'createdAt'>>) => {
+  const transactionRef = doc(db, 'transactions', transactionId)
+  
+  const updateData = {
+    ...updates,
+    updatedAt: new Date().toISOString()
+  }
+
+  await updateDoc(transactionRef, updateData)
+}
+
+export const deleteTransaction = async (transactionId: string) => {
+  const transactionRef = doc(db, 'transactions', transactionId)
+  await deleteDoc(transactionRef)
+}
+
+export const subscribeToTransactions = (
+  userId: string,
+  callback: (transactions: Transaction[]) => void
+) => {
+  const q = query(
+    collection(db, 'transactions'),
+    where('userId', '==', userId),
+    orderBy('date', 'desc')
+  )
+
+  return onSnapshot(q, (querySnapshot) => {
+    const transactions: Transaction[] = []
+    querySnapshot.forEach((doc) => {
+      transactions.push({ id: doc.id, ...doc.data() } as Transaction)
+    })
+    callback(transactions)
+  })
 }

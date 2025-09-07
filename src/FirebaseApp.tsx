@@ -5,11 +5,14 @@ import { FirebaseBetList } from './components/bets/FirebaseBetList'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
 import { useAuth } from './hooks/useAuth'
 import { Card, CardContent } from './components/ui/card'
-import { useState } from 'react'
+import { useState, Suspense, lazy } from 'react'
+
+// Lazy load the transactions manager
+const TransactionsManager = lazy(() => import('./components/transactions/BasicTransactionsManager').then(m => ({ default: m.BasicTransactionsManager })))
 
 export default function FirebaseApp() {
   const { user, loading } = useAuth()
-  const [tab, setTab] = useState<'bets' | 'add'>('bets')
+  const [tab, setTab] = useState<'bets' | 'add' | 'transactions'>('bets')
 
   if (loading) {
     return (
@@ -58,6 +61,7 @@ export default function FirebaseApp() {
           <TabsList className="mb-4">
             <TabsTrigger value="bets">Mina Bets</TabsTrigger>
             <TabsTrigger value="add">Lägg till Bet</TabsTrigger>
+            <TabsTrigger value="transactions">Transaktioner</TabsTrigger>
           </TabsList>
           
           <TabsContent value="bets" className="space-y-6">
@@ -66,6 +70,12 @@ export default function FirebaseApp() {
           
           <TabsContent value="add" className="space-y-6">
             <FirebaseBetForm />
+          </TabsContent>
+          
+          <TabsContent value="transactions" className="space-y-6">
+            <Suspense fallback={<div className="text-center p-8">Laddar transaktioner...</div>}>
+              <TransactionsManager />
+            </Suspense>
           </TabsContent>
         </Tabs>
       </Container>

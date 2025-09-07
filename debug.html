@@ -1,0 +1,26 @@
+<html></html>
+<head>
+  <title>Debug Transactions</title>
+</head>
+<body>
+  <h1>Debugging Transactions</h1>
+  <p>Open the browser console (F12) to see any errors</p>
+  <script>
+    // Script to load Firebase och testa transaktioner
+    const checkTransactions = async () => {
+      try {
+        const response = await fetch('/api/transactions');
+        const data = await response.json();
+        console.log('Transactions data:', data);
+      } catch (err) {
+        console.error('Error fetching transactions:', err);
+      }
+    };
+    
+    // Försök ladda sidan
+    window.onload = () => {
+      checkTransactions();
+    };
+  </script>
+</body>
+</html>
