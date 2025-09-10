@@ -11,6 +11,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
+  cleanupOutdatedCaches: true,
+  clientsClaim: true,
+  skipWaiting: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
         runtimeCaching: [
           {
@@ -36,6 +39,10 @@ export default defineConfig({
             },
           },
         ],
+      },
+      devOptions: {
+        // Disable service worker in dev to avoid stale-cache confusion
+        enabled: false,
       },
       includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'mask-icon.svg'],
       manifest: {

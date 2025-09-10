@@ -5,7 +5,6 @@ import { Badge } from '../ui/badge'
 import { format } from 'date-fns'
 import { Card } from '../ui/card'
 import { Transaction } from '../../types/Firebase'
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '../ui/dialog'
 import EditTransactionDialog from './EditTransactionDialog'
 
 interface TransactionsTableProps {

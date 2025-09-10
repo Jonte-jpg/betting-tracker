@@ -1,7 +1,13 @@
 // Firebase configuration
 import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import {
+  getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  type Firestore,
+} from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,5 +28,18 @@ export const auth = getAuth(app)
 // Initialize Google Auth Provider
 export const googleProvider = new GoogleAuthProvider()
 
-// Initialize Cloud Firestore and get a reference to the service
-export const db = getFirestore(app)
+// Initialize Cloud Firestore with persistent local cache.
+// Fallback to default Firestore if persistence isn't supported (older browsers/private mode).
+let dbInstance: Firestore
+try {
+  dbInstance = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      tabManager: persistentMultipleTabManager(),
+    }),
+  })
+} catch (e) {
+  console.warn('Persistent cache unavailable, falling back to default Firestore.', e)
+  dbInstance = getFirestore(app)
+}
+
+export const db = dbInstance

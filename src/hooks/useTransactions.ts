@@ -12,40 +12,58 @@ export function useTransactions() {
 
   useEffect(() => {
     if (!user) {
-      setTransactions([]);
-      setLoading(false);
-      return;
+      setTransactions([])
+      setLoading(false)
+      return
     }
 
-    setLoading(true);
-    setError(null);
+    setLoading(true)
+    setError(null)
 
-    const transactionsCollection = collection(db, "transactions");
-    const transactionsQuery = query(
-      transactionsCollection,
-      where("userId", "==", user.uid),
-      orderBy("date", "desc")
-    );
+    const baseQuery = query(
+      collection(db, 'transactions'),
+      where('userId', '==', user.uid)
+    )
 
-    const unsubscribe = onSnapshot(
-      transactionsQuery,
-      (snapshot) => {
-        const transactionsList = snapshot.docs.map((doc) => ({
-          ...doc.data(),
-          id: doc.id,
-        })) as Transaction[];
-        setTransactions(transactionsList);
-        setLoading(false);
-      },
-      (err) => {
-        console.error("Error fetching transactions:", err);
-        setError("Failed to load transactions. Please try again.");
-        setLoading(false);
-      }
-    );
+    // Start with ordered query; if it fails due to missing index, fall back.
+    let unsub: (() => void) | undefined
+    const startListener = (ordered: boolean) => {
+      const q = ordered ? query(baseQuery, orderBy('date', 'desc')) : baseQuery
+      unsub = onSnapshot(
+        q,
+        (snapshot) => {
+          const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Transaction[]
+          setTransactions(list)
+          setLoading(false)
+          if (!ordered) {
+            // Informative, but non-blocking: still working without sorting
+            setError((prev) => prev ?? 'Saknar index för sortering – visar utan sortering.')
+          } else {
+            setError(null)
+          }
+        },
+        (err: unknown) => {
+          const message = (err as { message?: string } | null)?.message || ''
+          const msg = String(message)
+          // If index is missing and we tried ordered, retry without orderBy
+          if (ordered && (msg.includes('index') || msg.includes('requires an index'))) {
+            if (unsub) unsub()
+            startListener(false)
+            return
+          }
+          console.error('Error fetching transactions:', err)
+          setError('Kunde inte hämta transaktioner. Försök igen senare.')
+          setLoading(false)
+        }
+      )
+    }
 
-    return () => unsubscribe();
-  }, [user]);
+    startListener(true)
+
+    return () => {
+      if (unsub) unsub()
+    }
+  }, [user])
 
   const addTransaction = async (transaction: Transaction): Promise<void> => {
     if (!user) throw new Error("User not authenticated");
