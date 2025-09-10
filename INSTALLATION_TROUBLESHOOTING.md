@@ -2,6 +2,23 @@
 
 ## Problem: EXE öppnas inte efter installation
 
+### VIKTIG UPPDATERING: Korrupt nedladdning
+Om du får felet "Filen eller katalogen är skadad och kan inte läsas", betyder det att:
+1. Ingen faktisk EXE-fil finns på servern
+2. Du laddar ner HTML-innehåll istället för binärfilen
+3. Firebase Hosting's SPA-rewrite fångar `/downloads/` felaktigt
+
+**Snabb kontroll:**
+```powershell
+Get-Item "C:\Users\$env:USERNAME\Downloads\BettingTracker_x64.exe" | Select-Object Length
+# Om Length är mindre än 1MB (ca 1,000,000 bytes) är filen korrupt
+```
+
+**Lösning för utvecklare:**
+1. Lägg faktiska .exe/.msi filer i `public/downloads/`
+2. Uppdatera Firebase rewrite-regler för att undanta `/downloads/**`
+3. Deploya på nytt
+
 ### Steg 1: Kontrollera installationsstatus
 ```powershell
 # Kontrollera om programmet finns i Program Files
