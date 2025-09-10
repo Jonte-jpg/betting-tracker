@@ -24,8 +24,9 @@ export function DownloadAppButton({ hrefMsi = '/downloads/BettingTracker_x64.msi
       .then((results) => {
         if (!active) return
         const [exeRes, msiRes] = results
-        const exeOk = exeRes.status === 'fulfilled' && exeRes.value.ok
-        const msiOk = msiRes.status === 'fulfilled' && msiRes.value.ok
+  const isBin = (r: Response) => /application\/octet-stream/i.test(r.headers.get('content-type') || '')
+  const exeOk = exeRes.status === 'fulfilled' && exeRes.value.ok && isBin(exeRes.value)
+  const msiOk = msiRes.status === 'fulfilled' && msiRes.value.ok && isBin(msiRes.value)
         if (exeOk) setHref(hrefExe)
         else if (msiOk) setHref(hrefMsi)
         else setHref(null)

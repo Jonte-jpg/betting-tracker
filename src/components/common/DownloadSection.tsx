@@ -3,10 +3,16 @@ import { Button } from '@/components/ui/button'
 import { Download } from 'lucide-react'
 import { isTauri } from '@/runtime/env'
 
+function isBinaryContentType(ct: string | null): boolean {
+  if (!ct) return false
+  return /application\/octet-stream/i.test(ct)
+}
+
 async function headOk(url: string): Promise<boolean> {
   try {
     const res = await fetch(url, { method: 'HEAD' })
-    return res.ok
+    const ct = res.headers.get('content-type')
+    return res.ok && isBinaryContentType(ct)
   } catch {
     return false
   }
