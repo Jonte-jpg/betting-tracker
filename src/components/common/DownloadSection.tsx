@@ -44,7 +44,7 @@ export function DownloadSection() {
     <section className="mx-auto max-w-3xl w-full">
       <div className="rounded-lg border p-4 bg-muted/40">
         <h2 className="text-lg font-semibold mb-2">Ladda ner skrivbordsapp</h2>
-        <p className="text-sm text-muted-foreground mb-3">Välj det format som fungerar bäst på din dator.</p>
+        <p className="text-sm text-muted-foreground mb-3">MSI-installationsfil för Windows (rekommenderat).</p>
         <div className="flex flex-col sm:flex-row gap-2">
           {hasMsi && (
             <a href="/downloads/BettingTracker_x64.msi" download>

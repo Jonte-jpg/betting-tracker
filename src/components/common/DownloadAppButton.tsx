@@ -8,15 +8,21 @@ type Props = Readonly<{
   hrefExe?: string
   label?: string
   alwaysShow?: boolean
+  preferMsi?: boolean
 }>
 
-export function DownloadAppButton({ hrefMsi = '/downloads/BettingTracker_x64.msi', hrefExe = '/downloads/BettingTracker_x64.exe', label = 'Ladda ner (Windows)', alwaysShow = false }: Props) {
-  const [href, setHref] = React.useState<string | null>(alwaysShow ? hrefExe || hrefMsi : null)
+export function DownloadAppButton({ hrefMsi = '/downloads/BettingTracker_x64.msi', hrefExe = '/downloads/BettingTracker_x64.exe', label = 'Ladda ner (Windows)', alwaysShow = false, preferMsi = true }: Props) {
+  const getInitialHref = () => {
+    if (!alwaysShow) return null
+    if (preferMsi) return hrefMsi || hrefExe
+    return hrefExe || hrefMsi
+  }
+  const [href, setHref] = React.useState<string | null>(getInitialHref())
 
   React.useEffect(() => {
     if (alwaysShow) return
     let active = true
-    // Prefer EXE if available, otherwise MSI; hide if neither exists
+    // Prefer MSI if preferMsi=true, otherwise EXE; hide if neither exists
     Promise.allSettled([
       fetch(hrefExe, { method: 'HEAD' }),
       fetch(hrefMsi, { method: 'HEAD' }),
@@ -24,12 +30,21 @@ export function DownloadAppButton({ hrefMsi = '/downloads/BettingTracker_x64.msi
       .then((results) => {
         if (!active) return
         const [exeRes, msiRes] = results
-  const isBin = (r: Response) => /application\/octet-stream/i.test(r.headers.get('content-type') || '')
-  const exeOk = exeRes.status === 'fulfilled' && exeRes.value.ok && isBin(exeRes.value)
-  const msiOk = msiRes.status === 'fulfilled' && msiRes.value.ok && isBin(msiRes.value)
-        if (exeOk) setHref(hrefExe)
-        else if (msiOk) setHref(hrefMsi)
-        else setHref(null)
+        const isBin = (r: Response) => /application\/octet-stream/i.test(r.headers.get('content-type') || '')
+        const exeOk = exeRes.status === 'fulfilled' && exeRes.value.ok && isBin(exeRes.value)
+        const msiOk = msiRes.status === 'fulfilled' && msiRes.value.ok && isBin(msiRes.value)
+        
+        if (preferMsi) {
+          if (msiOk) setHref(hrefMsi)
+          else if (exeOk) setHref(hrefExe)
+          else setHref(null)
+        } else if (exeOk) {
+          setHref(hrefExe)
+        } else if (msiOk) {
+          setHref(hrefMsi)
+        } else {
+          setHref(null)
+        }
       })
       .catch(() => {
         if (!active) return
@@ -38,7 +53,7 @@ export function DownloadAppButton({ hrefMsi = '/downloads/BettingTracker_x64.msi
     return () => {
       active = false
     }
-  }, [hrefExe, hrefMsi, alwaysShow])
+  }, [hrefExe, hrefMsi, alwaysShow, preferMsi])
 
   if (isTauri) return null
   if (!href) return null

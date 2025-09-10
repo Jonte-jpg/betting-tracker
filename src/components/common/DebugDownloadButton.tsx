@@ -57,9 +57,10 @@ URL: ${response.url}
         )}
         
         <p className="text-sm text-yellow-700">
-          <strong>OBS:</strong> Knapparna ovan fungerar bara om du har lagt faktiska .exe/.msi filer i{' '}
+          <strong>STATUS:</strong> Firebase Hosting tillåter MSI men INTE EXE på gratis plan.{' '}
+          MSI-knappen bör fungera om filen finns i{' '}
           <code className="bg-yellow-100 px-1 rounded">public/downloads/</code>{' '}
-          och deplocat.
+          och är deployd.
         </p>
       </div>
     </div>
