@@ -5,7 +5,7 @@ import { isTauri } from '@/runtime/env'
 
 function isBinaryContentType(ct: string | null): boolean {
   if (!ct) return false
-  return /application\/octet-stream/i.test(ct)
+  return /application\/octet-stream|application\/x-msi|application\/x-msdownload/i.test(ct)
 }
 
 async function headOk(url: string): Promise<boolean> {
@@ -21,6 +21,7 @@ async function headOk(url: string): Promise<boolean> {
 export function DownloadSection() {
   const [hasMsi, setHasMsi] = React.useState(false)
   const [hasExe, setHasExe] = React.useState(false)
+  const [isLoading, setIsLoading] = React.useState(true)
 
   React.useEffect(() => {
     let active = true
@@ -31,6 +32,7 @@ export function DownloadSection() {
       if (!active) return
       setHasMsi(msi)
       setHasExe(exe)
+      setIsLoading(false)
     })
     return () => {
       active = false
@@ -38,13 +40,42 @@ export function DownloadSection() {
   }, [])
 
   if (isTauri) return null
-  if (!hasMsi && !hasExe) return null
+
+  // Show loading or instructions if no files
+  if (isLoading) {
+    return (
+      <section className="mx-auto max-w-3xl w-full">
+        <div className="rounded-lg border p-4 bg-muted/40">
+          <h2 className="text-lg font-semibold mb-2">Letar efter installationsfiler...</h2>
+          <p className="text-sm text-muted-foreground">Kontrollerar tillgängliga nedladdningar...</p>
+        </div>
+      </section>
+    )
+  }
+
+  if (!hasMsi && !hasExe) {
+    return (
+      <section className="mx-auto max-w-3xl w-full">
+        <div className="rounded-lg border p-4 bg-muted/40">
+          <h2 className="text-lg font-semibold mb-2">Desktop-app</h2>
+          <p className="text-sm text-muted-foreground mb-3">
+            Inga installationsfiler hittades ännu. Under tiden kan du använda PWA-versionen genom att klicka "Installera" i webbläsaren.
+          </p>
+          <div className="text-xs text-muted-foreground bg-blue-50 p-2 rounded">
+            <strong>För utvecklare:</strong> Lägg MSI eller EXE-filer i <code>/public/downloads/</code> mappen för att aktivera nedladdningar.
+          </div>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="mx-auto max-w-3xl w-full">
       <div className="rounded-lg border p-4 bg-muted/40">
         <h2 className="text-lg font-semibold mb-2">Ladda ner skrivbordsapp</h2>
-        <p className="text-sm text-muted-foreground mb-3">MSI-installationsfil för Windows (rekommenderat).</p>
+        <p className="text-sm text-muted-foreground mb-3">
+          {hasMsi ? 'MSI-installationsfil för Windows (rekommenderat)' : 'EXE-installationsfil för Windows'}.
+        </p>
         <div className="flex flex-col sm:flex-row gap-2">
           {hasMsi && (
             <a href="/downloads/BettingTracker_x64.msi" download>
@@ -61,6 +92,11 @@ export function DownloadSection() {
             </a>
           )}
         </div>
+        {hasMsi && (
+          <div className="text-xs text-muted-foreground mt-2 bg-green-50 p-2 rounded">
+            <strong>Tips:</strong> MSI-filer fungerar bäst med Firebase Hosting och är säkrare att installera.
+          </div>
+        )}
       </div>
     </section>
   )
