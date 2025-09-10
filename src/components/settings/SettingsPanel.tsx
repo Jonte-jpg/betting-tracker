@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { useAppStore } from '@/store/useAppStore'
 import { OfflineSyncPanel } from './OfflineSyncPanel'
+import { DownloadSection } from '@/components/common/DownloadSection'
 import { toast } from 'sonner'
 
 export function SettingsPanel() {
@@ -110,6 +111,8 @@ export function SettingsPanel() {
     <div className="space-y-6">
       {/* Offline synkronisering */}
       <OfflineSyncPanel />
+  {/* Downloads */}
+  <DownloadSection />
       
       {/* Användare */}
       <Card>
