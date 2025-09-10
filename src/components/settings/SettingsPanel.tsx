@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useAppStore } from '@/store/useAppStore'
 import { OfflineSyncPanel } from './OfflineSyncPanel'
 import { DownloadSection } from '@/components/common/DownloadSection'
+import { DebugDownloadButton } from '@/components/common/DebugDownloadButton'
 import { toast } from 'sonner'
 
 export function SettingsPanel() {
@@ -111,10 +112,10 @@ export function SettingsPanel() {
     <div className="space-y-6">
       {/* Offline synkronisering */}
       <OfflineSyncPanel />
-  {/* Downloads */}
-  <DownloadSection />
-      
-      {/* Användare */}
+      {/* Debug Downloads - TEMPORARY */}
+      <DebugDownloadButton />
+      {/* Downloads */}
+      <DownloadSection />      {/* Användare */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
