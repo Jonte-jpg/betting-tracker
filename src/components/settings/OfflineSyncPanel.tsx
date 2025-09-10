@@ -33,7 +33,7 @@ export const OfflineSyncPanel = () => {
     // Uppdatera var 5:e sekund
     const interval = setInterval(updateData, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [getPendingChanges, getOfflineData]);
 
   const totalPendingChanges = 
     pendingChanges.add.length + 

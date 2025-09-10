@@ -1,12 +1,106 @@
-import React, { useState } from 'react'
+import React, { useState, useCallback } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
 import { Button } from '../ui/button'
 import { useAuth } from '../../hooks/useAuth'
 import { addTestTransaction } from '../../utils/testTransaction'
-import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore'
-import { db } from '../../lib/firebase'
+import { subscribeToTransactions } from '@/lib/firestore'
 import { Transaction } from '../../types/Firebase'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
+
+// Helpers for status rendering (avoid nested ternaries)
+function getStatusClass(status: string): string {
+  switch (status) {
+    case 'completed':
+      return 'bg-green-100 text-green-800'
+    case 'pending':
+      return 'bg-yellow-100 text-yellow-800'
+    default:
+      return 'bg-red-100 text-red-800'
+  }
+}
+
+function getStatusLabel(status: string): string {
+  switch (status) {
+    case 'completed':
+      return 'Genomförd'
+    case 'pending':
+      return 'Avvaktar'
+    default:
+      return 'Misslyckad'
+  }
+}
+
+// Helper components extracted to module scope to avoid inline declarations in JSX
+function TransactionTable({ transactions }: Readonly<{ transactions: Transaction[] }>) {
+  return (
+    <div className="border rounded overflow-hidden">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="p-2 text-left">Typ</th>
+            <th className="p-2 text-left">Belopp</th>
+            <th className="p-2 text-left">Bookmaker</th>
+            <th className="p-2 text-left">Datum</th>
+            <th className="p-2 text-left">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {transactions.map((transaction) => (
+            <tr key={transaction.id} className="border-t">
+              <td className="p-2">{transaction.type === 'deposit' ? 'Insättning' : 'Uttag'}</td>
+              <td className="p-2">{transaction.amount} kr</td>
+              <td className="p-2">{transaction.bookmaker}</td>
+              <td className="p-2">{new Date(transaction.date).toLocaleDateString()}</td>
+              <td className="p-2">
+                <span className={`px-2 py-1 rounded text-xs ${getStatusClass(transaction.status)}`}>
+                  {getStatusLabel(transaction.status)}
+                </span>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function ErrorView({ error, onRetry }: Readonly<{ error: string; onRetry: () => void }>) {
+  return (
+    <div>
+      <p className="text-red-500">{error}</p>
+      {error.includes('index') && (
+        <Button
+          className="mt-2 mr-2"
+          onClick={() =>
+            window.open(
+              'https://console.firebase.google.com/project/betting-tracker-8dedd/firestore/indexes',
+              '_blank'
+            )
+          }
+        >
+          Öppna Firebase Console
+        </Button>
+      )}
+      <Button className="mt-4" onClick={onRetry}>
+        Försök igen
+      </Button>
+    </div>
+  )
+}
+
+function TransactionsView({
+  error,
+  transactions,
+  onRetry,
+}: Readonly<{
+  error: string | null
+  transactions: Transaction[]
+  onRetry: () => void
+}>) {
+  if (error) return <ErrorView error={error} onRetry={onRetry} />
+  if (transactions.length === 0) return <p>Inga transaktioner hittades</p>
+  return <TransactionTable transactions={transactions} />
+}
 
 export function BasicTransactionsManager() {
   const { user } = useAuth()
@@ -39,64 +133,26 @@ export function BasicTransactionsManager() {
   };
 
   // Function to fetch transactions
-  const fetchTransactions = () => {
-    if (!user) return;
-    
-    setFetchingTransactions(true);
-    setError(null);
-    
+  const fetchTransactions = useCallback(() => {
+    if (!user) return
+    setFetchingTransactions(true)
+    setError(null)
     try {
-      const transactionsCollection = collection(db, "transactions");
-      
-      // Skapa en query med eller utan orderBy beroende på om vi har ett index
-      const transactionsQuery = useOrdering 
-        ? query(
-            transactionsCollection,
-            where("userId", "==", user.uid),
-            orderBy("date", "desc")
-          )
-        : query(
-            transactionsCollection,
-            where("userId", "==", user.uid)
-          );
-
-      // Listen for realtime updates
-      const unsubscribe = onSnapshot(
-        transactionsQuery,
-        (snapshot) => {
-          const transactionsList = snapshot.docs.map((doc) => ({
-            ...doc.data(),
-            id: doc.id,
-          })) as Transaction[];
-          setTransactions(transactionsList);
-          setFetchingTransactions(false);
-        },
-        (err) => {
-          console.error("Error fetching transactions:", err);
-          
-          // Visa särskilt meddelande vid indexfel
-          if (err.message.includes("index")) {
-            setError(
-              "Kunde inte hämta transaktioner: Ett index behöver skapas i Firebase. " +
-              "Gå till Firebase Console och skapa det föreslagna indexet. " +
-              "Efter att indexet har skapats, ladda om sidan."
-            );
-          } else {
-            setError("Kunde inte hämta transaktioner: " + err.message);
-          }
-          
-          setFetchingTransactions(false);
+      const unsub = subscribeToTransactions(user.uid, (list) => {
+        setTransactions(list)
+        setFetchingTransactions(false)
+        // If list is empty due to index fallback, show a gentle info once
+        if (list.length === 0 && !useOrdering) {
+          setError((prev) => prev ?? null)
         }
-      );
-      
-      // Cleanup function will run when component unmounts
-      return unsubscribe;
+      })
+      return unsub
     } catch (err) {
-      console.error("Error setting up transaction listener:", err);
-      setError("Kunde inte konfigurera lyssning på transaktioner");
-      setFetchingTransactions(false);
+      console.error('Error setting up transaction listener:', err)
+      setError('Kunde inte konfigurera lyssning på transaktioner')
+      setFetchingTransactions(false)
     }
-  };
+  }, [user, useOrdering])
 
   // Initialize transaction fetching when component mounts or useOrdering changes
   React.useEffect(() => {
@@ -104,7 +160,7 @@ export function BasicTransactionsManager() {
     return () => {
       if (unsubscribe) unsubscribe();
     };
-  }, [user, useOrdering]);
+  }, [fetchTransactions]);
 
   if (!user) {
     return (
@@ -177,57 +233,12 @@ export function BasicTransactionsManager() {
             <CardContent>
               {fetchingTransactions ? (
                 <p>Hämtar transaktioner...</p>
-              ) : error ? (
-                <div>
-                  <p className="text-red-500">{error}</p>
-                  {error.includes("index") && (
-                    <Button 
-                      className="mt-2 mr-2" 
-                      onClick={() => window.open('https://console.firebase.google.com/project/betting-tracker-8dedd/firestore/indexes', '_blank')}
-                    >
-                      Öppna Firebase Console
-                    </Button>
-                  )}
-                  <Button className="mt-4" onClick={fetchTransactions}>
-                    Försök igen
-                  </Button>
-                </div>
-              ) : transactions.length === 0 ? (
-                <p>Inga transaktioner hittades</p>
               ) : (
-                <div className="border rounded overflow-hidden">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-gray-100">
-                        <th className="p-2 text-left">Typ</th>
-                        <th className="p-2 text-left">Belopp</th>
-                        <th className="p-2 text-left">Bookmaker</th>
-                        <th className="p-2 text-left">Datum</th>
-                        <th className="p-2 text-left">Status</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {transactions.map(transaction => (
-                        <tr key={transaction.id} className="border-t">
-                          <td className="p-2">{transaction.type === 'deposit' ? 'Insättning' : 'Uttag'}</td>
-                          <td className="p-2">{transaction.amount} kr</td>
-                          <td className="p-2">{transaction.bookmaker}</td>
-                          <td className="p-2">{new Date(transaction.date).toLocaleDateString()}</td>
-                          <td className="p-2">
-                            <span className={`px-2 py-1 rounded text-xs ${
-                              transaction.status === 'completed' ? 'bg-green-100 text-green-800' : 
-                              transaction.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-                              'bg-red-100 text-red-800'
-                            }`}>
-                              {transaction.status === 'completed' ? 'Genomförd' : 
-                               transaction.status === 'pending' ? 'Avvaktar' : 'Misslyckad'}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <TransactionsView
+                  error={error}
+                  transactions={transactions}
+                  onRetry={() => fetchTransactions()}
+                />
               )}
             </CardContent>
           </Card>

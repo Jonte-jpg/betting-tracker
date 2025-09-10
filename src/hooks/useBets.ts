@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { collection, query, where, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { FirebaseBet } from '@/types/Firebase'
@@ -49,13 +49,7 @@ export function useBets(userId: string | null) {
   } = useOfflineStorage()
 
   // Synkronisera pending changes när vi kommer online
-  useEffect(() => {
-    if (isOnline && userId) {
-      syncPendingChanges()
-    }
-  }, [isOnline, userId])
-
-  const syncPendingChanges = async () => {
+  const syncPendingChanges = useCallback(async () => {
     const pendingChanges = getPendingChanges()
     const hasChanges = 
       pendingChanges.add.length > 0 || 
@@ -72,13 +66,12 @@ export function useBets(userId: string | null) {
       // Lägg till nya bets
       for (const bet of pendingChanges.add) {
         const firebaseBet = betToFirebaseBet(bet)
-        const betData = {
+        const { id: _omitId, ...betData } = {
           ...firebaseBet,
           userId,
           createdAt: new Date(bet.date || Date.now()),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         }
-        delete (betData as any).id // Ta bort lokalt ID
         await addDoc(betsRef, betData)
       }
 
@@ -86,11 +79,10 @@ export function useBets(userId: string | null) {
       for (const bet of pendingChanges.update) {
         const betRef = doc(db, 'bets', bet.id)
         const firebaseBet = betToFirebaseBet(bet)
-        const betData = {
+        const { id: _omitId, ...betData } = {
           ...firebaseBet,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         }
-        delete (betData as any).id
         await updateDoc(betRef, betData)
       }
 
@@ -107,7 +99,13 @@ export function useBets(userId: string | null) {
     } finally {
       setSyncing(false)
     }
-  }
+  }, [getPendingChanges, clearPendingChanges, userId])
+
+  useEffect(() => {
+    if (isOnline && userId) {
+      syncPendingChanges()
+    }
+  }, [isOnline, userId, syncPendingChanges])
 
   useEffect(() => {
     if (!userId) {
@@ -164,7 +162,7 @@ export function useBets(userId: string | null) {
     )
 
     return unsubscribe
-  }, [userId, isOnline])
+  }, [userId, isOnline, getOfflineBets, saveBetsOffline])
 
   // Offline-aware CRUD operations
   const addBet = async (betData: Partial<Bet>) => {
@@ -183,13 +181,12 @@ export function useBets(userId: string | null) {
       try {
         const betsRef = collection(db, 'bets')
         const firebaseBet = betToFirebaseBet(newBet)
-        const firebaseBetData = {
+        const { id: _omitId, ...firebaseBetData } = {
           ...firebaseBet,
           userId,
           createdAt: new Date(),
-          updatedAt: new Date()
+          updatedAt: new Date(),
         }
-        delete (firebaseBetData as any).id
         await addDoc(betsRef, firebaseBetData)
       } catch (error) {
         console.error('Error adding bet online:', error)
@@ -217,11 +214,10 @@ export function useBets(userId: string | null) {
       try {
         const betRef = doc(db, 'bets', betId)
         const firebaseBet = betToFirebaseBet(updatedBet)
-        const updateData = {
+        const { id: _omitId, ...updateData } = {
           ...firebaseBet,
-          updatedAt: new Date()
+          updatedAt: new Date(),
         }
-        delete (updateData as any).id
         await updateDoc(betRef, updateData)
       } catch (error) {
         console.error('Error updating bet online:', error)

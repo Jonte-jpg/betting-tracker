@@ -32,7 +32,10 @@ export function useTransactions() {
       unsub = onSnapshot(
         q,
         (snapshot) => {
-          const list = snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) as Transaction[]
+          const list = snapshot.docs.map((d) => {
+            const data = d.data() as Omit<Transaction, 'id'>
+            return { id: d.id, ...data }
+          })
           setTransactions(list)
           setLoading(false)
           if (!ordered) {

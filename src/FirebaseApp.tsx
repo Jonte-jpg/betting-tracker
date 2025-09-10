@@ -7,12 +7,13 @@ import { useAuth } from './hooks/useAuth'
 import { Card, CardContent } from './components/ui/card'
 import { useState, Suspense, lazy } from 'react'
 
-// Lazy load the transactions manager
-const TransactionsManager = lazy(() => import('./components/transactions/BasicTransactionsManager').then(m => ({ default: m.BasicTransactionsManager })))
+// Lazy load the full transactions manager (CRUD, totals)
+const TransactionsManager = lazy(() => import('./components/transactions/TransactionsManager').then(m => ({ default: m.TransactionsManager })))
+const FirebaseStats = lazy(() => import('./components/analytics/FirebaseStats').then(m => ({ default: m.FirebaseStats })))
 
 export default function FirebaseApp() {
   const { user, loading } = useAuth()
-  const [tab, setTab] = useState<'bets' | 'add' | 'transactions'>('bets')
+  const [tab, setTab] = useState<'bets' | 'add' | 'transactions' | 'stats'>('bets')
 
   if (loading) {
     return (
@@ -62,6 +63,7 @@ export default function FirebaseApp() {
             <TabsTrigger value="bets">Mina Bets</TabsTrigger>
             <TabsTrigger value="add">Lägg till Bet</TabsTrigger>
             <TabsTrigger value="transactions">Transaktioner</TabsTrigger>
+            <TabsTrigger value="stats">Stats</TabsTrigger>
           </TabsList>
           
           <TabsContent value="bets" className="space-y-6">
@@ -75,6 +77,12 @@ export default function FirebaseApp() {
           <TabsContent value="transactions" className="space-y-6">
             <Suspense fallback={<div className="text-center p-8">Laddar transaktioner...</div>}>
               <TransactionsManager />
+            </Suspense>
+          </TabsContent>
+
+          <TabsContent value="stats" className="space-y-6">
+            <Suspense fallback={<div className="text-center p-8">Laddar statistik...</div>}>
+              <FirebaseStats />
             </Suspense>
           </TabsContent>
         </Tabs>
