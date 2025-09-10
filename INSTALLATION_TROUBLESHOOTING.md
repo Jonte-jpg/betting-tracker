@@ -2,7 +2,17 @@
 
 ## Problem: EXE öppnas inte efter installation
 
-### VIKTIG UPPDATERING: Korrupt nedladdning
+### VIKTIG UPPDATERING: Firebase Hosting-begränsning
+**PROBLEM IDENTIFIERAT:** Firebase Hosting Spark Plan (gratis) BLOCKERAR .exe-filer!
+
+Felmeddelande: "Executable files are forbidden on the Spark billing plan"
+
+**Lösningar:**
+1. **Använd MSI istället för EXE** (MSI tillåts på gratis plan)
+2. **Uppgradera till Firebase Blaze Plan** (pay-as-you-go) för EXE-stöd
+3. **Använd annan hosting** för EXE-filer (GitHub Releases, egen server)
+
+### FÖREGÅENDE PROBLEM: Korrupt nedladdning
 Om du får felet "Filen eller katalogen är skadad och kan inte läsas", betyder det att:
 1. Ingen faktisk EXE-fil finns på servern
 2. Du laddar ner HTML-innehåll istället för binärfilen
