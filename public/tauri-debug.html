@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tauri Test</title>
+  <style>
+    body { 
+      margin: 0; 
+      padding: 20px; 
+      font-family: system-ui, -apple-system, sans-serif;
+      background: #f5f5f5;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    .success { color: #16a34a; }
+    .error { color: #dc2626; }
+    .info { color: #2563eb; }
+    pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Tauri Debug Test</h1>
+    <p>Denna sida hjälper till att felsöka Tauri-appen.</p>
+    
+    <div id="status">
+      <h3>Status kontroller:</h3>
+      <ul id="checks"></ul>
+    </div>
+    
+    <div id="environment">
+      <h3>Miljöinformation:</h3>
+      <pre id="env-info"></pre>
+    </div>
+    
+    <div id="console-output">
+      <h3>Konsol-utdata:</h3>
+      <pre id="console"></pre>
+    </div>
+    
+    <button onclick="loadMainApp()" style="padding: 10px 20px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer;">
+      Ladda huvudappen
+    </button>
+  </div>
+
+  <script>
+    const checks = document.getElementById('checks');
+    const envInfo = document.getElementById('env-info');
+    const consoleOutput = document.getElementById('console');
+    
+    function addCheck(message, success) {
+      const li = document.createElement('li');
+      li.innerHTML = `<span class="${success ? 'success' : 'error'}">${success ? '✅' : '❌'}</span> ${message}`;
+      checks.appendChild(li);
+    }
+    
+    function logToConsole(message) {
+      consoleOutput.textContent += new Date().toLocaleTimeString() + ': ' + message + '\n';
+      console.log(message);
+    }
+    
+    // Basic checks
+    addCheck('HTML laddat', true);
+    addCheck('JavaScript kör', true);
+    addCheck('DOM tillgänglig', !!document.getElementById);
+    addCheck('localStorage tillgänglig', !!window.localStorage);
+    addCheck('fetch API tillgänglig', !!window.fetch);
+    
+    // Tauri-specific checks
+    const isTauri = window.__TAURI__ !== undefined;
+    addCheck('Tauri runtime detected', isTauri);
+    
+    if (isTauri) {
+      addCheck('Tauri invoke tillgänglig', !!window.__TAURI__.invoke);
+      logToConsole('Tauri environment detected');
+    } else {
+      logToConsole('Running in web browser');
+    }
+    
+    // Environment info
+    const info = {
+      userAgent: navigator.userAgent,
+      platform: navigator.platform,
+      language: navigator.language,
+      cookieEnabled: navigator.cookieEnabled,
+      onLine: navigator.onLine,
+      localStorage: !!window.localStorage,
+      sessionStorage: !!window.sessionStorage,
+      tauri: isTauri,
+      url: window.location.href,
+      referrer: document.referrer || 'none'
+    };
+    
+    envInfo.textContent = JSON.stringify(info, null, 2);
+    
+    // Test localStorage
+    try {
+      localStorage.setItem('tauri-test', 'works');
+      const test = localStorage.getItem('tauri-test');
+      addCheck('localStorage skriv/läs', test === 'works');
+      localStorage.removeItem('tauri-test');
+    } catch (e) {
+      addCheck('localStorage skriv/läs', false);
+      logToConsole('localStorage error: ' + e.message);
+    }
+    
+    // Test fetch
+    try {
+      fetch('data:text/plain,test')
+        .then(() => {
+          addCheck('fetch API fungerar', true);
+          logToConsole('fetch test successful');
+        })
+        .catch(e => {
+          addCheck('fetch API fungerar', false);
+          logToConsole('fetch test failed: ' + e.message);
+        });
+    } catch (e) {
+      addCheck('fetch API fungerar', false);
+      logToConsole('fetch error: ' + e.message);
+    }
+    
+    function loadMainApp() {
+      logToConsole('Attempting to load main app...');
+      window.location.href = './index.html';
+    }
+    
+    // Override console methods to capture output
+    const originalLog = console.log;
+    const originalError = console.error;
+    
+    console.log = function(...args) {
+      logToConsole('LOG: ' + args.join(' '));
+      originalLog.apply(console, args);
+    };
+    
+    console.error = function(...args) {
+      logToConsole('ERROR: ' + args.join(' '));
+      originalError.apply(console, args);
+    };
+    
+    window.onerror = function(msg, url, line, col, error) {
+      logToConsole(`ERROR: ${msg} at ${url}:${line}:${col}`);
+      if (error) logToConsole('Stack: ' + error.stack);
+    };
+    
+    logToConsole('Tauri debug test loaded successfully');
+  </script>
+</body>
+</html>

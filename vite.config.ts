@@ -11,9 +11,9 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       workbox: {
-  cleanupOutdatedCaches: true,
-  clientsClaim: true,
-  skipWaiting: true,
+        cleanupOutdatedCaches: true,
+        clientsClaim: true,
+        skipWaiting: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
         runtimeCaching: [
           {
@@ -74,7 +74,8 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  base: '/', // Firebase Hosting (root path)
+  // Conditional base path: root for web, relative for Tauri
+  base: process.env.TAURI_BUILD === 'true' ? './' : '/',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -95,6 +96,6 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 600, // Increase limit to 600kb
+    chunkSizeWarningLimit: 1600, // Increase for Tauri builds
   }
 })

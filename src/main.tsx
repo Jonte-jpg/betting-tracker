@@ -5,6 +5,8 @@ import { ThemeProvider } from './contexts/ThemeProvider'
 import FirebaseApp from './FirebaseApp'
 import './styles/globals.css'
 import ErrorBoundary from './components/shared/ErrorBoundary'
+import { TauriErrorBoundary } from './components/common/TauriErrorBoundary'
+import { isTauri } from './runtime/env'
 
 // Registrera Service Worker för PWA (produktion) och auto-reload vid uppdatering
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
@@ -38,13 +40,34 @@ if (import.meta.env.PROD && 'serviceWorker' in navigator) {
 }
 
 const root = createRoot(document.getElementById('root')!)
-root.render(
-  <React.StrictMode>
+
+// Wrap in appropriate error boundary based on environment
+const AppWrapper = () => {
+  if (isTauri) {
+    return (
+      <TauriErrorBoundary>
+        <ErrorBoundary>
+          <ThemeProvider defaultTheme="system" storageKey="betting-tracker-theme">
+            <FirebaseApp />
+            <Toaster richColors position="top-center" />
+          </ThemeProvider>
+        </ErrorBoundary>
+      </TauriErrorBoundary>
+    )
+  }
+  
+  return (
     <ErrorBoundary>
       <ThemeProvider defaultTheme="system" storageKey="betting-tracker-theme">
         <FirebaseApp />
         <Toaster richColors position="top-center" />
       </ThemeProvider>
     </ErrorBoundary>
+  )
+}
+
+root.render(
+  <React.StrictMode>
+    <AppWrapper />
   </React.StrictMode>
 )
