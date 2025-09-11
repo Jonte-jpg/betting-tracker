@@ -13,10 +13,13 @@ on:
 
 jobs:
   release:
+    permissions:
+      contents: write
     runs-on: windows-latest
     
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
       
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -24,30 +27,43 @@ jobs:
           node-version: '18'
           cache: 'npm'
           
-      - name: Install dependencies
-        run: npm ci
-        
-      - name: Build web app
-        run: npm run build
-        
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         
-      - name: Install Tauri CLI
-        run: npm install -g @tauri-apps/cli
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "./src-tauri -> target"
+          
+      - name: Install dependencies
+        run: npm ci
         
       - name: Build Tauri app
-        run: npm run tauri build
-        
-      - name: Create Release
-        uses: softprops/action-gh-release@v1
-        with:
-          tag_name: ${{ github.event.inputs.version || github.ref_name }}
-          name: Release ${{ github.event.inputs.version || github.ref_name }}
-          draft: false
-          prerelease: false
-          files: |
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/bundle/nsis/*.exe
+        uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.event.inputs.version || github.ref_name }}
+          releaseName: 'BettingTracker ${{ github.event.inputs.version || github.ref_name }}'
+          releaseBody: |
+            🎉 New release of BettingTracker!
+            
+            **Downloads:**
+            - **BettingTracker-${{ github.event.inputs.version || github.ref_name }}-x64.msi** - Windows Installer (Recommended)
+            - **BettingTracker-${{ github.event.inputs.version || github.ref_name }}-x64.exe** - Windows Executable
+            
+            **Installation:**
+            1. Download the MSI file (recommended) or EXE file
+            2. Run the installer
+            3. Follow the installation wizard
+            
+            **What's new:**
+            - Desktop application for Windows
+            - Offline support
+            - Native performance
+            
+            For web version, visit: https://jonte-jpg.github.io/betting-tracker
+          releaseDraft: false
+          prerelease: false
+          includeDebug: false
+          includeRelease: true

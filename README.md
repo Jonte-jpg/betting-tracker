@@ -1,21 +1,35 @@
 # Betting Tracker
 
-En modern betting tracker byggd med React, TypeScript, Tailwind CSS och shadcn/ui.
+En modern betting tracker byggd med React, TypeScript, Tailwind CSS och shadcn/ui. Tillgänglig som webbapp (PWA) och native Windows-applikation.
 
-## Funktioner
+## 📥 Ladda ner
+
+### Windows Desktop App
+- **Ladda ner:** [Senaste versionen](https://github.com/Jonte-jpg/betting-tracker/releases/latest)
+- **Format:** MSI (rekommenderat) eller EXE
+- **Krav:** Windows 10 eller senare (64-bit)
+
+### Webbapp/PWA
+- **URL:** [https://jonte-jpg.github.io/betting-tracker](https://jonte-jpg.github.io/betting-tracker)
+- **Installation:** Klicka "Installera" i webbläsaren för PWA
+
+## ✨ Funktioner
 
 - ✅ Lägg till nya bets via formulär (datum, event, insats, odds, resultat)
-- ✅ Översiktstabell över alla bets med sortering och filtrering
+- ✅ Översiktstabell över alla bets med sortering och filtrering  
 - ✅ Summering: total insats, total vinst/förlust, ROI, träffprocent
 - ✅ Leaderboard där användare rankas efter ROI
 - ✅ Hantera flera användare
 - ✅ Export till CSV
 - ✅ Responsiv design för mobil och desktop
-- ✅ Data sparas i localStorage
+- ✅ Data sparas i localStorage (persistent mellan sessioner)
+- ✅ PWA-stöd (installera som app)
+- ✅ Native Windows-app (Tauri)
 
-## Teknik
+## 🛠️ Teknik
 
 - **Frontend**: React 18 + TypeScript
+- **Desktop**: Tauri (Rust + WebView)
 - **Styling**: Tailwind CSS + shadcn/ui
 - **State Management**: Zustand
 - **Forms**: react-hook-form + zod
@@ -24,7 +38,9 @@ En modern betting tracker byggd med React, TypeScript, Tailwind CSS och shadcn/u
 - **Datum**: date-fns
 - **Notifications**: Sonner
 
-## Installation och start
+## 🚀 Installation och start
+
+### Utveckling (Webbapp)
 
 ```bash
 # Installera dependencies
@@ -38,6 +54,88 @@ npm run build
 
 # Förhandsgranska build
 npm run preview
+```
+
+### Utveckling (Desktop)
+
+**Krav:**
+- Node.js 18+
+- Rust (installera via [rustup.rs](https://rustup.rs/))
+- Windows: Visual Studio Build Tools eller Visual Studio Community
+
+```bash
+# Installera dependencies (inkluderar Tauri CLI)
+npm install
+
+# Starta Tauri development (öppnar desktop-appen)
+npm run tauri:dev
+
+# Bygga desktop-installer
+npm run tauri:build
+```
+
+Efter `npm run tauri:build` hittar du installationsfilerna här:
+- **MSI:** `src-tauri/target/release/bundle/msi/`
+- **EXE:** `src-tauri/target/release/bundle/nsis/`
+
+## 📦 Releases
+
+### Skapa en release
+
+```bash
+# 1. Committa alla ändringar
+git add .
+git commit -m "Release v1.0.0"
+
+# 2. Skapa och pusha tag
+git tag v1.0.0
+git push origin main
+git push origin v1.0.0
+
+# 3. GitHub Actions bygger automatiskt och skapar release
+# med MSI och EXE installer som assets
+```
+
+### Automatisk process
+- GitHub Actions triggas på tags som börjar med `v*`
+- Bygger både webbapp och desktop-app
+- Skapar GitHub Release med installationsfiler
+- Webbappen uppdaterar automatiskt download-länkar
+
+## 🔧 Felsökning
+
+### Windows Build-problem
+
+**"Windows SDK not found":**
+```bash
+# Installera Visual Studio Build Tools
+winget install Microsoft.VisualStudio.2022.BuildTools
+```
+
+**"Rust toolchain not found":**
+```bash
+# Installera Rust
+winget install Rustlang.Rustup
+# Eller via https://rustup.rs/
+```
+
+**"WebView2 not found":**
+```bash
+# Installera WebView2 Runtime
+winget install Microsoft.EdgeWebView2
+```
+
+### Development-problem
+
+**"Module not found":**
+```bash
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**"Tauri command not found":**
+```bash
+npm install --save-dev @tauri-apps/cli
 ```
 
 ## Projektstruktur
