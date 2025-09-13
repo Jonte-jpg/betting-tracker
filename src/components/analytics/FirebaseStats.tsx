@@ -5,21 +5,17 @@ import type { FirebaseBet } from '@/types/Firebase'
 import { subscribeToBets } from '@/lib/firestore'
 import { useTransactions } from '@/hooks/useTransactions'
 import { format } from 'date-fns'
-import { sv } from 'date-fns/locale'
-import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  CartesianGrid,
-  XAxis,
-  YAxis,
-  Tooltip,
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell
-} from 'recharts'
+// Lazy loadade diagram-komponenter – laddas in dynamiskt
+type TrendChartProps = { data: Array<{ date: string; profit: number; cumulative: number }> }
+type MonthlyChartProps = { data: Array<{ month: string; profit: number; staked: number; count: number; won: number; lost: number }> }
+type OddsChartProps = { data: Array<{ range: string; min: number; max: number; count: number; won: number; winRate: number }> }
+type ResultsPieProps = { data: Array<{ name: string; value: number; color: string }> }
+
+// Dessa sätts när bundle importeras
+let TrendChart: React.ComponentType<TrendChartProps>
+let MonthlyChart: React.ComponentType<MonthlyChartProps>
+let OddsChart: React.ComponentType<OddsChartProps>
+let ResultsPie: React.ComponentType<ResultsPieProps>
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { TrendingUp, TrendingDown, Target, Percent, DollarSign } from 'lucide-react'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
@@ -35,6 +31,18 @@ export function FirebaseStats() {
   const [bookmaker, setBookmaker] = useState<string>('all')
   const [startDate, setStartDate] = useState<string>('')
   const [endDate, setEndDate] = useState<string>('')
+  const [chartsReady, setChartsReady] = useState(false)
+
+  useEffect(() => {
+    // Prefetch charts bundle when component mounts
+    import('./charts/ChartsBundle').then(mod => {
+      TrendChart = mod.TrendChart
+      MonthlyChart = mod.MonthlyChart
+      OddsChart = mod.OddsChart
+      ResultsPie = mod.ResultsPie
+      setChartsReady(true)
+    })
+  }, [])
 
   useEffect(() => {
     if (!user) return
@@ -268,18 +276,8 @@ export function FirebaseStats() {
               <CardDescription>Kumulativ vinst per dag</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={stats.dailyChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="date" tickFormatter={(v) => format(new Date(v), 'MM/dd')} />
-                  <YAxis tickFormatter={(v) => formatCurrency(v)} />
-                  <Tooltip
-                    labelFormatter={(v) => format(new Date(v), 'yyyy-MM-dd')}
-                    formatter={(v: number) => [formatCurrency(v), 'Kumulativ vinst']}
-                  />
-                  <Area type="monotone" dataKey="cumulative" stroke="#2563eb" fill="#3b82f6" fillOpacity={0.25} />
-                </AreaChart>
-              </ResponsiveContainer>
+              {!chartsReady && <div className="text-sm text-muted-foreground">Laddar diagram...</div>}
+              {chartsReady && <TrendChart data={stats.dailyChartData} />}
             </CardContent>
           </Card>
         </TabsContent>
@@ -291,18 +289,8 @@ export function FirebaseStats() {
               <CardDescription>Vinst/förlust per månad</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={stats.monthlyChartData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" tickFormatter={(v) => format(new Date(v + '-01'), 'MMM yyyy', { locale: sv })} />
-                  <YAxis tickFormatter={(v) => formatCurrency(v)} />
-                  <Tooltip
-                    labelFormatter={(v) => format(new Date(v + '-01'), 'MMMM yyyy', { locale: sv })}
-                    formatter={(v: number) => [formatCurrency(v), 'Vinst']}
-                  />
-                  <Bar dataKey="profit" fill="#10b981" name="Vinst" />
-                </BarChart>
-              </ResponsiveContainer>
+              {!chartsReady && <div className="text-sm text-muted-foreground">Laddar diagram...</div>}
+              {chartsReady && <MonthlyChart data={stats.monthlyChartData} />}
             </CardContent>
           </Card>
         </TabsContent>
@@ -314,15 +302,8 @@ export function FirebaseStats() {
               <CardDescription>Hur bra är du på olika odds-nivåer?</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={stats.oddsData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="range" />
-                  <YAxis />
-                  <Tooltip formatter={(v: number) => [`${v.toFixed(1)}%`, 'Träffsäkerhet']} />
-                  <Bar dataKey="winRate" fill="#a78bfa" />
-                </BarChart>
-              </ResponsiveContainer>
+              {!chartsReady && <div className="text-sm text-muted-foreground">Laddar diagram...</div>}
+              {chartsReady && <OddsChart data={stats.oddsData} />}
             </CardContent>
           </Card>
         </TabsContent>
@@ -334,32 +315,16 @@ export function FirebaseStats() {
               <CardDescription>Andelar vunna/förlorade/avbrutna</CardDescription>
             </CardHeader>
             <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: 'Vunna', value: stats.wonCount, color: '#22c55e' },
-                      { name: 'Förlorade', value: stats.lostCount, color: '#ef4444' },
-                      { name: 'Avbrutna', value: stats.voidCount, color: '#6b7280' }
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent ? percent * 100 : 0).toFixed(0)}%`}
-                    outerRadius={80}
-                    dataKey="value"
-                  >
-                    {[
-                      { name: 'Vunna', value: stats.wonCount, color: '#22c55e' },
-                      { name: 'Förlorade', value: stats.lostCount, color: '#ef4444' },
-                      { name: 'Avbrutna', value: stats.voidCount, color: '#6b7280' }
-                    ].map((e) => (
-                      <Cell key={e.name} fill={e.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip />
-                </PieChart>
-              </ResponsiveContainer>
+              {!chartsReady && <div className="text-sm text-muted-foreground">Laddar diagram...</div>}
+              {chartsReady && (
+                <ResultsPie
+                  data={[
+                    { name: 'Vunna', value: stats.wonCount, color: '#22c55e' },
+                    { name: 'Förlorade', value: stats.lostCount, color: '#ef4444' },
+                    { name: 'Avbrutna', value: stats.voidCount, color: '#6b7280' }
+                  ]}
+                />
+              )}
             </CardContent>
           </Card>
         </TabsContent>

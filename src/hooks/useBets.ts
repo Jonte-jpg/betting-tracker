@@ -1,9 +1,10 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { collection, query, where, orderBy, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore'
 import { db } from '@/lib/firebase'
 import type { FirebaseBet } from '@/types/Firebase'
 import type { Bet } from '@/types/Bet'
 import { useOfflineStorage } from './useOfflineStorage'
+import { initOfflineQueue } from '@/lib/offlineQueue'
 
 // Konverteringsfunktioner mellan Bet och FirebaseBet
 const betToFirebaseBet = (bet: Bet): FirebaseBet => ({
@@ -31,7 +32,17 @@ const firebaseBetToBet = (firebaseBet: FirebaseBet): Bet => ({
   createdAt: firebaseBet.createdAt
 })
 
-export function useBets(userId: string | null) {
+export interface UseBetsResult {
+  bets: FirebaseBet[]
+  loading: boolean
+  error: string | null
+  syncing: boolean
+  addBet: (betData: Partial<Bet>) => Promise<void>
+  updateBet: (betId: string, betData: Partial<Bet>) => Promise<void>
+  deleteBet: (betId: string) => Promise<void>
+}
+
+export function useBets(userId: string | null): UseBetsResult {
   const [bets, setBets] = useState<FirebaseBet[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -44,68 +55,21 @@ export function useBets(userId: string | null) {
     updateBetOffline,
     deleteBetOffline,
     getOfflineBets,
-    getPendingChanges,
-    clearPendingChanges
+    // getPendingChanges, (handled by queue)
+    // clearPendingChanges (handled by queue)
   } = useOfflineStorage()
 
   // Synkronisera pending changes när vi kommer online
-  const syncPendingChanges = useCallback(async () => {
-    const pendingChanges = getPendingChanges()
-    const hasChanges = 
-      pendingChanges.add.length > 0 || 
-      pendingChanges.update.length > 0 || 
-      pendingChanges.delete.length > 0
-
-    if (!hasChanges) return
-
-    setSyncing(true)
-    
-    try {
-      const betsRef = collection(db, 'bets')
-
-      // Lägg till nya bets
-      for (const bet of pendingChanges.add) {
-        const firebaseBet = betToFirebaseBet(bet)
-        const { id: _omitId, ...betData } = {
-          ...firebaseBet,
-          userId,
-          createdAt: new Date(bet.date || Date.now()),
-          updatedAt: new Date(),
-        }
-        await addDoc(betsRef, betData)
-      }
-
-      // Uppdatera befintliga bets
-      for (const bet of pendingChanges.update) {
-        const betRef = doc(db, 'bets', bet.id)
-        const firebaseBet = betToFirebaseBet(bet)
-        const { id: _omitId, ...betData } = {
-          ...firebaseBet,
-          updatedAt: new Date(),
-        }
-        await updateDoc(betRef, betData)
-      }
-
-      // Ta bort bets
-      for (const betId of pendingChanges.delete) {
-        const betRef = doc(db, 'bets', betId)
-        await deleteDoc(betRef)
-      }
-
-      clearPendingChanges()
-    } catch (error) {
-      console.error('Error syncing changes:', error)
-      setError('Kunde inte synkronisera ändringar')
-    } finally {
-      setSyncing(false)
-    }
-  }, [getPendingChanges, clearPendingChanges, userId])
-
+  // Initialisera offline retry queue
   useEffect(() => {
-    if (isOnline && userId) {
-      syncPendingChanges()
-    }
-  }, [isOnline, userId, syncPendingChanges])
+    if (!userId) return
+    const queue = initOfflineQueue({
+      userId,
+      setSyncing: (v) => setSyncing(v),
+      setError: (msg) => msg && setError(msg)
+    })
+    return () => { queue.dispose() }
+  }, [userId])
 
   useEffect(() => {
     if (!userId) {
@@ -259,7 +223,6 @@ export function useBets(userId: string | null) {
     syncing,
     addBet,
     updateBet,
-    deleteBet,
-    syncPendingChanges
+    deleteBet
   }
 }

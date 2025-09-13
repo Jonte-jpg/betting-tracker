@@ -70,8 +70,9 @@ async function fetchLatestRelease(): Promise<GitHubRelease> {
 }
 
 export function GitHubDownloadButton() {
-  const [release, setRelease] = useState<GitHubRelease | null>(getCachedRelease())
-  const [loading, setLoading] = useState(!release)
+  const initialCached = getCachedRelease()
+  const [release, setRelease] = useState<GitHubRelease | null>(initialCached)
+  const [loading, setLoading] = useState(!initialCached)
   const [error, setError] = useState<string | null>(null)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
 
@@ -89,38 +90,41 @@ export function GitHubDownloadButton() {
   }, [])
 
   useEffect(() => {
-    if (!isOnline || release) return
+    // If offline, never attempt network fetch; rely on cached data
+    if (!isOnline) {
+      setLoading(false)
+      return
+    }
+    if (release) return // already have data (cached or fetched)
 
     let retryCount = 0
     const maxRetries = 3
-    
+
+    let aborted = false
     async function loadRelease() {
       try {
         setLoading(true)
         setError(null)
-        
         const latestRelease = await fetchLatestRelease()
+        if (aborted) return
         setRelease(latestRelease)
         setCachedRelease(latestRelease)
-        
       } catch (err) {
+        if (aborted) return
         retryCount++
-        
         if (retryCount <= maxRetries) {
-          // Exponential backoff: 1s, 2s, 4s
           const delay = Math.pow(2, retryCount - 1) * 1000
-          setTimeout(loadRelease, delay)
-          return
+            setTimeout(loadRelease, delay)
+            return
         }
-        
         const message = err instanceof Error ? err.message : 'Failed to fetch release'
         setError(message)
       } finally {
-        setLoading(false)
+        if (!aborted) setLoading(false)
       }
     }
-
     loadRelease()
+    return () => { aborted = true }
   }, [isOnline, release])
 
   // Don't show in Tauri app
@@ -149,11 +153,12 @@ export function GitHubDownloadButton() {
     )
   }
 
-  if (!isOnline) {
+  // If offline but we have cached release, allow download of cached asset URLs
+  if (!isOnline && !release) {
     return (
       <div className="flex items-center gap-2 text-sm text-muted-foreground">
         <AlertCircle className="h-4 w-4" />
-        Offline - kan inte hämta nedladdningslänkar
+        Offline - inga cachade releases
       </div>
     )
   }

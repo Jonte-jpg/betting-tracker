@@ -1,6 +1,6 @@
 {
   "name": "betting-tracker",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "private": true,
   "description": "En modern betting tracker byggd med Vite, React, TypeScript, Tailwind och shadcn/ui. Persistens i localStorage.",
   "scripts": {
@@ -64,7 +64,7 @@
     "stylelint-config-standard": "^39.0.0",
     "tailwindcss": "^3.4.13",
     "tailwindcss-animate": "^1.0.7",
-    "typescript": "^5.6.2",
+  "typescript": "5.6.2",
     "vite": "^5.4.8",
     "vite-plugin-pwa": "^1.0.3"
   }

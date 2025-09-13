@@ -1,4 +1,5 @@
-export const isTauri: boolean = typeof (window as any).__TAURI__ !== 'undefined'
+interface MaybeTauriWindow extends Window { __TAURI__?: unknown }
+export const isTauri: boolean = typeof (window as unknown as MaybeTauriWindow).__TAURI__ !== 'undefined'
 
 export const isStandalonePWA: boolean =
   (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) ||

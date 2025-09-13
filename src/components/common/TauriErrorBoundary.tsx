@@ -23,7 +23,7 @@ export class TauriErrorBoundary extends Component<Props, State> {
     console.error('Tauri Error Boundary caught an error:', error, errorInfo)
     
     // Log to console for debugging in Tauri
-    if ((window as any).__TAURI__) {
+  if ((window as unknown as { __TAURI__?: unknown }).__TAURI__) {
       console.error('Running in Tauri context')
       console.error('Error details:', {
         message: error.message,

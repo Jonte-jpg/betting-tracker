@@ -5,11 +5,12 @@ import { Badge } from '../ui/badge';
 import { RefreshCw, Check, AlertCircle, Upload, Download } from 'lucide-react';
 import { useOfflineStorage } from '../../hooks/useOfflineStorage';
 import { useBets } from '../../hooks/useBets';
+import { initOfflineQueue } from '@/lib/offlineQueue';
 import { useAuth } from '../../hooks/useAuth';
 
 export const OfflineSyncPanel = () => {
   const { user } = useAuth();
-  const { syncing, syncPendingChanges } = useBets(user?.uid || null);
+  const { syncing } = useBets(user?.uid || null);
   const { 
     isOnline, 
     hasOfflineData, 
@@ -41,10 +42,16 @@ export const OfflineSyncPanel = () => {
     pendingChanges.delete.length;
 
   const handleManualSync = async () => {
-    if (syncPendingChanges) {
-      await syncPendingChanges();
-      setPendingChanges(getPendingChanges());
-    }
+    // Manual flush av offline-kön
+    if (!user?.uid) return;
+    const queue = initOfflineQueue({
+      userId: user.uid,
+      setSyncing: () => {},
+      setError: () => {}
+    });
+    await queue.flushNow();
+    queue.dispose();
+    setPendingChanges(getPendingChanges());
   };
 
   const handleClearOfflineData = () => {

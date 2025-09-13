@@ -16,6 +16,16 @@ export default defineConfig({
         skipWaiting: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,json,woff2}'],
         runtimeCaching: [
+          // HTML shell – ensure we always try network first so new deploys surface
+          {
+            urlPattern: /.*index.html.*/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'html-shell',
+              networkTimeoutSeconds: 3,
+              cacheableResponse: { statuses: [0, 200] },
+            }
+          },
           {
             urlPattern: /^https:\/\/firestore\.googleapis\.com\/.*/i,
             handler: 'NetworkFirst',
@@ -76,6 +86,10 @@ export default defineConfig({
   },
   // Conditional base path: root for web, relative for Tauri
   base: process.env.TAURI_BUILD === 'true' ? './' : '/',
+  define: {
+    __APP_VERSION__: JSON.stringify(process.env.npm_package_version),
+    __APP_BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   build: {
     outDir: 'dist',
     assetsDir: 'assets',

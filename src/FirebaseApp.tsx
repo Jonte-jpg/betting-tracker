@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from './components/ui/tabs'
 import { useAuth } from './hooks/useAuth'
 import { Card, CardContent } from './components/ui/card'
 import { useState, Suspense, lazy } from 'react'
+import { OfflineIndicator } from '@/components/ui/offline-indicator'
 
 // Lazy load the full transactions manager (CRUD, totals)
 const TransactionsManager = lazy(() => import('./components/transactions/TransactionsManager').then(m => ({ default: m.TransactionsManager })))
@@ -87,6 +88,10 @@ export default function FirebaseApp() {
           </TabsContent>
         </Tabs>
       </Container>
+      {/* Global offline indicator floating bottom-right */}
+      <div className="fixed bottom-3 right-3 z-50 opacity-90 hover:opacity-100 transition-opacity">
+        <OfflineIndicator />
+      </div>
     </div>
   )
 }
